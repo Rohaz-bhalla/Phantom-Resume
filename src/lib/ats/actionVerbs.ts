@@ -1,0 +1,17 @@
+export const ACTION_VERBS = [
+  "built",
+  "developed",
+  "designed",
+  "implemented",
+  "optimized",
+  "improved",
+  "led",
+  "managed",
+  "created",
+  "engineered",
+  "automated",
+  "integrated",
+  "deployed",
+  "analyzed",
+  "refactored",
+]

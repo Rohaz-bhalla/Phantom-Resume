@@ -1,16 +1,15 @@
 "use server"
 
+import { auth } from "@clerk/nextjs/server"
 import { db } from "@/lib/db"
 import { resumes } from "@/lib/db/schema"
-import { auth } from "@clerk/nextjs/server"
+import { and, eq } from "drizzle-orm"
 import { createEmptyResume } from "@/lib/resume/empty-resume"
 import { ResumeSchema } from "@/lib/resume/resume.schema"
-import { and, eq } from "drizzle-orm"
 
-/* Get or create active resume */
 export async function getOrCreateActiveResume() {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) return null
 
   const existing = await db.query.resumes.findFirst({
     where: (r, { eq, and }) =>
@@ -31,10 +30,9 @@ export async function getOrCreateActiveResume() {
   return created
 }
 
-/* Update resume (autosave) */
 export async function updateResume(resumeId: string, data: unknown) {
   const { userId } = await auth()
-  if (!userId) throw new Error("Unauthorized")
+  if (!userId) return
 
   const parsed = ResumeSchema.parse(data)
 
