@@ -34,7 +34,7 @@ export async function updateResume(resumeId: string, data: unknown) {
   const { userId } = await auth()
   if (!userId) return
 
-  const parsed = ResumeSchema.parse(data)
+  const parsed = ResumeSchema.parse(data) as typeof resumes.$inferInsert.data
 
   await db
     .update(resumes)
