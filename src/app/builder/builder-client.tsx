@@ -1,8 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-import { AtsScorePanel } from "@/components/ats/AtsScorePanel"
-
 import { useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -54,7 +52,6 @@ export default function BuilderClient({ resume }: { resume: any }) {
       <div className="p-4 bg-muted/30">
         <ResumePreview data={form.watch()} />
         
-        <AtsScorePanel resume={form.watch()} />
       </div>
     </div>
   )
