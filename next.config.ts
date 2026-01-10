@@ -1,8 +1,8 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  experimental: {
-    turbo: false, // 🔥 HARD DISABLE TURBOPACK
-  },
-}
+import type { NextConfig } from "next";
 
-module.exports = nextConfig
+const nextConfig: NextConfig = {
+  // Required for Puppeteer to work in Next.js 16
+  serverExternalPackages: ["puppeteer"],
+};
+
+export default nextConfig;

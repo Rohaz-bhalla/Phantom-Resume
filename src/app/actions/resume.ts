@@ -5,7 +5,7 @@ import { db } from "@/lib/db"
 import { resumes } from "@/lib/db/schema"
 import { and, eq } from "drizzle-orm"
 import { createEmptyResume } from "@/lib/resume/empty-resume"
-import { ResumeSchema } from "@/lib/resume/resume.schema"
+import { ResumeDraftSchema } from "@/lib/resume/resume.schema"
 
 export async function getOrCreateActiveResume() {
   const { userId } = await auth()
@@ -34,13 +34,19 @@ export async function updateResume(resumeId: string, data: unknown) {
   const { userId } = await auth()
   if (!userId) return
 
-  const parsed = ResumeSchema.parse(data) as typeof resumes.$inferInsert.data
+  try {
+    // ✅ Use Draft Schema (permissive) for autosave
+    const parsed = ResumeDraftSchema.parse(data) as typeof resumes.$inferInsert.data
 
-  await db
-    .update(resumes)
-    .set({
-      data: parsed,
-      updatedAt: new Date(),
-    })
-    .where(and(eq(resumes.id, resumeId), eq(resumes.userId, userId)))
+    await db
+      .update(resumes)
+      .set({
+        data: parsed,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(resumes.id, resumeId), eq(resumes.userId, userId)))
+  } catch (error) {
+    console.error("Autosave failed:", error)
+    // We swallow the error here so the UI doesn't crash on a temporary glitch
+  }
 }
