@@ -3,7 +3,8 @@ import { ResumeRenderer } from "./ResumeRenderer"
 
 export function ResumePreview({ data }: { data: Resume }) {
   return (
-    <div className="h-full overflow-y-auto bg-background p-4">
+    // REMOVED: "h-full overflow-y-auto" to fix double scrollbars
+    <div className="bg-background p-4 min-h-full">
       <div className="mx-auto max-w-200">
         <ResumeRenderer data={data} />
       </div>

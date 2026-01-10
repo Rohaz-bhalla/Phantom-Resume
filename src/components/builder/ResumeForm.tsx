@@ -2,24 +2,23 @@
 
 import { UseFormReturn } from "react-hook-form"
 import { 
-  User, 
-  Briefcase, 
-  Layers, 
-  Award, 
-  Zap, 
-  RotateCcw, // Added Reset Icon
+  User, Briefcase, Layers, Award, Zap, RotateCcw, 
+  PenTool 
 } from "lucide-react" 
 import type { Resume } from "@/lib/resume/resume.types"
 
+// Section Components
 import { CertificationsSection } from "./CertificationsSection"
 import { ExperienceSection } from "./ExperienceSection"
 import { ProjectsSection } from "./ProjectsSection"
 import { SkillsSection } from './SkillsSection'
+import { CustomSectionManager } from "./CustomSectionManager" // For Volunteering, Awards
+import { CustomFieldsSection } from "./CustomFieldsSection"   // For Links (Portfolio, etc)
 
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button" // Ensure Button is imported
+import { Button } from "@/components/ui/button" 
 import {
   Accordion,
   AccordionContent,
@@ -29,21 +28,16 @@ import {
 
 export function ResumeForm({ form }: { form: UseFormReturn<Resume> }) {
 
-  // --- HANDLE RESET LOGIC ---
   const handleReset = () => {
-    if (confirm("Are you sure you want to clear the entire resume? This cannot be undone.")) {
+    if (confirm("Resetting will clear all data. Continue?")) {
       form.reset({
-        basics: {
-          name: "",
-          email: "",
-          summary: "", 
-          // Add phone/location/url here if they exist in your schema
-        },
+        basics: { name: "", email: "", summary: "", customFields: [] },
         experience: [],
         projects: [],
         skills: [],
         certifications: [],
-        education: [], // Including this just in case your type requires it
+        education: [],
+        customSections: [],
       } as unknown as Resume)
     }
   }
@@ -51,103 +45,83 @@ export function ResumeForm({ form }: { form: UseFormReturn<Resume> }) {
   return (
     <div className="space-y-6">
       
-      {/* --- TOP HEADER WITH RESET BUTTON --- */}
+      {/* HEADER */}
       <div className="flex items-center justify-between border-b pb-2">
         <h2 className="text-lg font-semibold tracking-tight">Editor</h2>
-        <Button 
-          type="button" 
-          variant="destructive" 
-          size="sm" 
-          onClick={handleReset}
-        >
-          <RotateCcw className="mr-2 h-4 w-4" />
-          Reset Resume
+        <Button type="button" variant="destructive" size="sm" onClick={handleReset}>
+          <RotateCcw className="mr-2 h-4 w-4" /> Reset
         </Button>
       </div>
 
-      {/* --- ACCORDION SECTIONS --- */}
+      {/* SECTIONS */}
       <Accordion type="single" collapsible defaultValue="basics" className="w-full">
 
-        {/* SKILLS */}
+        {/* 1. SKILLS */}
         <AccordionItem value="skills">
           <AccordionTrigger>
-            <div className="flex items-center gap-2">
-              <Zap className="h-4 w-4" />
-              <span>Skills</span>
-            </div>
+             <div className="flex items-center gap-2"> <Zap className="h-4 w-4" /> <span>Skills</span> </div>
           </AccordionTrigger>
-          <AccordionContent className="px-1 pt-2">
-            <SkillsSection form={form} />
-          </AccordionContent>
+          <AccordionContent className="px-1 pt-2"> <SkillsSection form={form} /> </AccordionContent>
         </AccordionItem>
 
-        {/* CERTIFICATIONS */}
+        {/* 2. CERTIFICATIONS */}
         <AccordionItem value="certifications">
           <AccordionTrigger>
-            <div className="flex items-center gap-2">
-              <Award className="h-4 w-4" />
-              <span>Certifications</span>
-            </div>
+             <div className="flex items-center gap-2"> <Award className="h-4 w-4" /> <span>Certifications</span> </div>
           </AccordionTrigger>
-          <AccordionContent className="px-1 pt-2">
-            <CertificationsSection form={form} />
-          </AccordionContent>
+          <AccordionContent className="px-1 pt-2"> <CertificationsSection form={form} /> </AccordionContent>
         </AccordionItem>
         
-        {/* BASICS */}
+        {/* 3. BASICS (Now includes Links!) */}
         <AccordionItem value="basics">
           <AccordionTrigger>
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              <span>Personal Information</span>
-            </div>
+             <div className="flex items-center gap-2"> <User className="h-4 w-4" /> <span>Personal Information</span> </div>
           </AccordionTrigger>
           <AccordionContent className="space-y-4 px-1 pt-2">
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Full Name</Label>
-                <Input {...form.register("basics.name")} placeholder="John Doe" />
-              </div>
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <Input {...form.register("basics.email")} placeholder="john@example.com" />
-              </div>
+              <div className="space-y-2"> <Label>Full Name</Label> <Input {...form.register("basics.name")} /> </div>
+              <div className="space-y-2"> <Label>Email</Label> <Input {...form.register("basics.email")} /> </div>
             </div>
-            <div className="space-y-2">
-              <Label>Professional Summary</Label>
-              <Textarea 
-                className="min-h-[120px] resize-none" 
-                placeholder="Briefly describe your professional background..."
-                {...form.register("summary")} 
-              />
+            <div className="space-y-2"> 
+                <Label>Summary</Label> 
+                <Textarea className="min-h-[100px]" {...form.register("summary")} /> 
             </div>
+
+            {/* --- ADDED THIS BACK --- */}
+            <div className="pt-2 border-t mt-4">
+               <CustomFieldsSection form={form} />
+            </div>
+
           </AccordionContent>
         </AccordionItem>
 
-        {/* EXPERIENCE */}
+        {/* 4. EXPERIENCE */}
         <AccordionItem value="experience">
           <AccordionTrigger>
-            <div className="flex items-center gap-2">
-              <Briefcase className="h-4 w-4" />
-              <span>Experience</span>
-            </div>
+             <div className="flex items-center gap-2"> <Briefcase className="h-4 w-4" /> <span>Experience</span> </div>
           </AccordionTrigger>
-          <AccordionContent className="px-1 pt-2">
-            <ExperienceSection form={form} />
+          <AccordionContent className="px-1 pt-2"> <ExperienceSection form={form} /> </AccordionContent>
+        </AccordionItem>
+
+        {/* 5. CUSTOM SECTIONS (Volunteering, etc) */}
+        <AccordionItem value="custom-sections">
+          <AccordionTrigger>
+             <div className="flex items-center gap-2"> 
+                <PenTool className="h-4 w-4" /> 
+                <span>Custom Sections</span> 
+             </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-1 pt-2"> 
+             <CustomSectionManager form={form} /> 
           </AccordionContent>
         </AccordionItem>
 
-        {/* PROJECTS */}
+        {/* 6. PROJECTS */}
         <AccordionItem value="projects">
           <AccordionTrigger>
-            <div className="flex items-center gap-2">
-              <Layers className="h-4 w-4" />
-              <span>Projects</span>
-            </div>
+             <div className="flex items-center gap-2"> <Layers className="h-4 w-4" /> <span>Projects</span> </div>
           </AccordionTrigger>
-          <AccordionContent className="px-1 pt-2">
-            <ProjectsSection form={form} />
-          </AccordionContent>
+          <AccordionContent className="px-1 pt-2"> <ProjectsSection form={form} /> </AccordionContent>
         </AccordionItem>
 
       </Accordion>
