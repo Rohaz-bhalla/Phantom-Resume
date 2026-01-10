@@ -2,9 +2,30 @@
 
 import Link from "next/link"
 import { UserButton, SignInButton, SignedIn, SignedOut } from "@clerk/nextjs"
-import { FileText, Loader2, CheckCircle, Download } from "lucide-react"
+import { 
+  FileText, 
+  Loader2, 
+  CheckCircle, 
+  Download, 
+  Heart 
+} from "lucide-react"
+
+// Import Brand Icons from react-icons/si (Simple Icons)
+import { 
+  SiGithub, 
+  SiLinkedin, 
+  SiX, 
+  SiBuymeacoffee 
+} from "react-icons/si"
+
 import { ModeToggle } from "@/components/ModeToggle"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface NavbarProps {
   isBuilder?: boolean
@@ -14,7 +35,7 @@ interface NavbarProps {
 
 export function Navbar({ isBuilder = false, isSaving = false, onDownload }: NavbarProps) {
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+    <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center justify-between px-4 md:px-6 max-w-7xl mx-auto">
         
         {/* --- LEFT: LOGO --- */}
@@ -22,17 +43,15 @@ export function Navbar({ isBuilder = false, isSaving = false, onDownload }: Navb
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <FileText className="h-5 w-5" />
           </div>
-          {/* UPDATED: Always shows "Phantom Resume" now */}
           <span>Phantom Resume</span>
         </Link>
 
         {/* --- RIGHT: ACTIONS --- */}
         <div className="flex items-center gap-4">
           
-          {/* BUILDER SPECIFIC CONTROLS (Only visible if isBuilder is true) */}
+          {/* BUILDER CONTROLS (Only visible in Builder Mode) */}
           {isBuilder && (
             <>
-              {/* Save Status */}
               <div className="hidden md:flex text-sm text-muted-foreground mr-2">
                 {isSaving ? (
                   <span className="flex items-center gap-1">
@@ -45,7 +64,6 @@ export function Navbar({ isBuilder = false, isSaving = false, onDownload }: Navb
                 )}
               </div>
 
-              {/* Download Button */}
               {onDownload && (
                 <Button onClick={onDownload} size="sm" variant="default" className="gap-2">
                   <Download className="h-4 w-4" />
@@ -53,9 +71,44 @@ export function Navbar({ isBuilder = false, isSaving = false, onDownload }: Navb
                 </Button>
               )}
               
-              <div className="h-6 w-px bg-border mx-2" /> {/* Divider */}
+              <div className="h-6 w-px bg-border mx-2" />
             </>
           )}
+
+          {/* --- SOCIALS DROPDOWN --- */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+                <Heart className="h-5 w-5 text-red-500/80 hover:text-red-600" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem asChild>
+                <Link href="https://github.com/your-username" target="_blank" className="cursor-pointer flex items-center gap-2">
+                  <SiGithub className="h-4 w-4" />
+                  <span>GitHub</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="https://linkedin.com/in/your-username" target="_blank" className="cursor-pointer flex items-center gap-2">
+                  <SiLinkedin className="h-4 w-4 text-[#0A66C2]" />
+                  <span>LinkedIn</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="https://x.com/your-username" target="_blank" className="cursor-pointer flex items-center gap-2">
+                  <SiX className="h-3.5 w-3.5" />
+                  <span>X (Twitter)</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="https://buymeacoffee.com/your-username" target="_blank" className="cursor-pointer flex items-center gap-2 font-medium hover:bg-orange-50 dark:hover:bg-orange-400">
+                  <SiBuymeacoffee className="h-4 w-4 text-[#FFDD00]" />
+                  <span className="text-[#FF813F]">Buy me a Coffee</span>
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* GLOBAL CONTROLS */}
           <ModeToggle />
@@ -68,7 +121,6 @@ export function Navbar({ isBuilder = false, isSaving = false, onDownload }: Navb
             </SignedOut>
 
             <SignedIn>
-              {/* Hide "Dashboard" button if we are already IN the builder to avoid clutter */}
               {!isBuilder && (
                 <Link href="/builder">
                   <Button variant="ghost" size="sm">Dashboard</Button>
