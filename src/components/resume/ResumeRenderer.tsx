@@ -8,44 +8,99 @@ export function ResumeRenderer({ data }: Props) {
   return (
     <article className="font-sans text-sm leading-relaxed text-foreground space-y-6">
 
-      {/* HEADER */}
+      {/* --- HEADER (Updated) --- */}
       <header className="space-y-1 border-b pb-4">
         <h1 className="text-2xl font-bold tracking-tight">
           {data.basics.name || "Your Name"}
         </h1>
 
         <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
-          {/* Standard Fields */}
-          {[
-            data.basics.email,
-            data.basics.phone,
-            data.basics.location,
-          ]
-            .filter(Boolean)
-            .map((item, i) => (
-              <span key={i}>{item}</span>
-            ))}
+          
+          {/* 1. Email: Blue & Clickable */}
+          {data.basics.email && (
+            <a 
+              href={`mailto:${data.basics.email}`}
+              className="text-blue-600 hover:underline"
+            >
+              {data.basics.email}
+            </a>
+          )}
 
-          {/* Social Links (Hardcoded) */}
+          {/* 2. Phone: Clickable (Optional, kept neutral or blue if preferred) */}
+          {data.basics.phone && (
+            <a 
+              href={`tel:${data.basics.phone}`}
+              className="hover:text-blue-600 hover:underline"
+            >
+              {data.basics.phone}
+            </a>
+          )}
+
+          {/* 3. Location: Text only */}
+          {data.basics.location && (
+            <span>{data.basics.location}</span>
+          )}
+
+          {/* 4. Social Links: Blue & Clickable */}
           {data.basics.links?.linkedin && (
-            <span>LinkedIn: {data.basics.links.linkedin}</span>
+            <span>
+              <span className="text-foreground">LinkedIn: </span>
+              <a 
+                href={data.basics.links.linkedin} 
+                target="_blank" 
+                rel="noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                {data.basics.links.linkedin}
+              </a>
+            </span>
           )}
           {data.basics.links?.github && (
-            <span>GitHub: {data.basics.links.github}</span>
+            <span>
+              <span className="text-foreground">GitHub: </span>
+              <a 
+                href={data.basics.links.github} 
+                target="_blank" 
+                rel="noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                {data.basics.links.github}
+              </a>
+            </span>
           )}
           {data.basics.links?.twitter && (
-            <span>X: {data.basics.links.twitter}</span>
+            <span>
+              <span className="text-foreground">X: </span>
+              <a 
+                href={data.basics.links.twitter} 
+                target="_blank" 
+                rel="noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                {data.basics.links.twitter}
+              </a>
+            </span>
           )}
 
-          {/* Dynamic Custom Links (Portfolio, Blog, etc.) */}
+          {/* 5. Custom Fields (Portfolio, Website, etc): Blue & Clickable */}
           {data.basics.customFields?.map((field) => (
             <span key={field.id}>
-              {field.label}: {field.value}
+              <span className="text-foreground">{field.label}: </span>
+              <a 
+                href={field.value}
+                target="_blank" 
+                rel="noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                {field.value}
+              </a>
             </span>
           ))}
         </div>
       </header>
 
+      {/* ... (Rest of the resume sections: Summary, Skills, Experience, etc. remain unchanged) ... */}
+      
       {/* SUMMARY */}
       {data.summary && (
         <section>
@@ -99,7 +154,7 @@ export function ResumeRenderer({ data }: Props) {
         </section>
       )}
 
-      {/* PROJECTS */}
+      {/* PROJECTS (Updated from previous step) */}
       {data.projects && data.projects.length > 0 && (
         <section>
           <h2 className="text-sm font-bold uppercase tracking-wider mb-2 border-b pb-1">
@@ -110,7 +165,32 @@ export function ResumeRenderer({ data }: Props) {
             {data.projects.map((proj, i) => (
               <li key={i}>
                 <div className="flex justify-between items-baseline">
-                  <span className="font-medium text-base">{proj.title}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-base">{proj.title}</span>
+                    
+                    <div className="flex gap-2 text-xs">
+                        {proj.github && (
+                            <a 
+                                href={proj.github} 
+                                target="_blank" 
+                                rel="noreferrer"
+                                className="text-blue-600 hover:underline border border-blue-200 px-1.5 py-0.5 rounded"
+                            >
+                                GitHub
+                            </a>
+                        )}
+                        {proj.website && (
+                            <a 
+                                href={proj.website} 
+                                target="_blank" 
+                                rel="noreferrer"
+                                className="text-blue-600 hover:underline border border-blue-200 px-1.5 py-0.5 rounded"
+                            >
+                                Live Demo
+                            </a>
+                        )}
+                    </div>
+                  </div>
                 </div>
 
                 {proj.bullets.length > 0 && (
@@ -155,7 +235,7 @@ export function ResumeRenderer({ data }: Props) {
         </section>
       )}
 
-      {/* CERTIFICATIONS */}
+      {/* CERTIFICATIONS (Updated from previous step) */}
       {data.certifications && data.certifications.length > 0 && (
         <section>
           <h2 className="text-sm font-bold uppercase tracking-wider mb-2 border-b pb-1">
@@ -168,6 +248,20 @@ export function ResumeRenderer({ data }: Props) {
                   <span className="font-semibold">{cert.name}</span>
                   <span className="text-muted-foreground mx-1">—</span>
                   <span>{cert.issuer}</span>
+                  
+                  {cert.url && (
+                    <>
+                      <span className="mx-1 text-muted-foreground">|</span>
+                      <a 
+                        href={cert.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-blue-600 hover:underline ml-1"
+                      >
+                        Link
+                      </a>
+                    </>
+                  )}
                 </div>
                 <span className="text-muted-foreground whitespace-nowrap text-xs">
                   {cert.date}
@@ -178,7 +272,7 @@ export function ResumeRenderer({ data }: Props) {
         </section>
       )}
 
-      {/* --- NEW: RENDER CUSTOM SECTIONS --- */}
+      {/* CUSTOM SECTIONS */}
       {data.customSections && data.customSections.map((section) => (
         <section key={section.id}>
            <h2 className="text-sm font-bold uppercase tracking-wider mb-2 border-b pb-1">

@@ -23,13 +23,11 @@ function ProjectItem({
   form: UseFormReturn<Resume>, 
   index: number 
 }) {
-  // Field Array for Bullets (Description points)
   const { fields: bulletFields, append: appendBullet, remove: removeBullet } = useFieldArray({
     control: form.control,
     name: `projects.${index}.bullets` as any,
   })
 
-  // Field Array for Tech Stack
   const { fields: techFields, append: appendTech, remove: removeTech } = useFieldArray({
     control: form.control,
     name: `projects.${index}.tech` as any,
@@ -43,6 +41,24 @@ function ProjectItem({
             {...form.register(`projects.${index}.title` as any)} 
             placeholder="e.g. E-Commerce Dashboard"
         />
+      </div>
+
+      {/* --- NEW: LINKS SECTION --- */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+           <Label>GitHub URL</Label>
+           <Input 
+             {...form.register(`projects.${index}.github` as any)} 
+             placeholder="https://github.com/..."
+           />
+        </div>
+        <div>
+           <Label>Deployed Link (Website)</Label>
+           <Input 
+             {...form.register(`projects.${index}.website` as any)} 
+             placeholder="https://my-app.vercel.app"
+           />
+        </div>
       </div>
 
       {/* Tech Stack Section */}
@@ -83,15 +99,16 @@ function ProjectItem({
       <div className="space-y-2">
         <Label>Description / Bullets</Label>
         {bulletFields.map((field, bIndex) => (
-          <div key={field.id} className="flex gap-2">
+          <div key={field.id} className="flex gap-2 items-start">
             <Textarea
-              className="min-h-[60px] text-sm"
+              className="min-h-15 text-sm resize-none"
               {...form.register(`projects.${index}.bullets.${bIndex}` as any)}
             />
             <Button
               type="button"
               variant="ghost"
               size="icon"
+              className="mt-1"
               onClick={() => removeBullet(bIndex)}
             >
               <X className="h-4 w-4" />
@@ -122,15 +139,12 @@ export function ProjectsSection({ form }: { form: UseFormReturn<Resume> }) {
     <div className="space-y-4">
       <Accordion type="single" collapsible className="w-full space-y-2">
         {fields.map((field, index) => {
-           // We use 'as any' safely here because we know 'title' exists in the data
-           // even if TypeScript is confused by the complex nested paths
            const title = form.watch(`projects.${index}.title` as any) as string
            
            return (
             <AccordionItem key={field.id} value={field.id} className="border rounded-md px-2">
               <div className="flex justify-between items-center">
                 <AccordionTrigger className="hover:no-underline text-sm font-semibold">
-                   {/* Fallback to "Project X" if title is empty */}
                    {title || `Project ${index + 1}`}
                 </AccordionTrigger>
                 
@@ -160,11 +174,13 @@ export function ProjectsSection({ form }: { form: UseFormReturn<Resume> }) {
         variant="outline"
         className="w-full border-dashed"
         onClick={() => 
-            // This object matches YOUR schema: title, bullets, tech
             append({ 
                 title: "", 
                 bullets: [], 
-                tech: [] 
+                tech: [],
+                // Initialize new fields
+                github: "",
+                website: "" 
             } as any)
         }
       >

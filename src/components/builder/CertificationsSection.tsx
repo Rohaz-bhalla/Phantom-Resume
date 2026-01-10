@@ -17,7 +17,8 @@ export function CertificationsSection({ form }: { form: UseFormReturn<Resume> })
     <div className="space-y-4">
       {fields.map((field, index) => (
         <Card key={field.id}>
-          <CardContent className="pt-6 relative space-y-3">
+          {/* CHANGED: Increased pt-6 to pt-10 to prevent Trash button overlap */}
+          <CardContent className="pt-10 relative space-y-3">
              <Button
                 type="button"
                 variant="ghost"
@@ -28,7 +29,8 @@ export function CertificationsSection({ form }: { form: UseFormReturn<Resume> })
                 <Trash2 className="h-4 w-4" />
               </Button>
 
-            <div className="grid grid-cols-2 gap-3">
+            {/* CHANGED: grid-cols-2 to grid-cols-1 md:grid-cols-2 for mobile responsiveness */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <Label>Certification Name</Label>
                 <Input {...form.register(`certifications.${index}.name`)} placeholder="AWS Certified Solutions Architect" />
@@ -39,7 +41,8 @@ export function CertificationsSection({ form }: { form: UseFormReturn<Resume> })
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-3">
+            {/* CHANGED: grid-cols-2 to grid-cols-1 md:grid-cols-2 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <Label>Date</Label>
                 <Input {...form.register(`certifications.${index}.date`)} placeholder="May 2024" />
@@ -57,7 +60,8 @@ export function CertificationsSection({ form }: { form: UseFormReturn<Resume> })
         type="button"
         variant="outline"
         className="w-full border-dashed"
-        onClick={() => append({ name: "", issuer: "", date: "" })}
+        // CHANGED: Added url: "" to initialize the field correctly
+        onClick={() => append({ name: "", issuer: "", date: "", url: "" })}
       >
         <Plus className="mr-2 h-4 w-4" /> Add Certification
       </Button>
