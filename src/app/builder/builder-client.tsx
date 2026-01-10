@@ -9,7 +9,7 @@ import type { Resume } from "@/lib/resume/resume.types"
 import { ResumeDraftSchema } from "@/lib/resume/resume.schema"
 import { updateResume } from "@/app/actions/resume"
 
-import { Navbar } from "@/components/Navbar" // Import the Unified Navbar
+import { Navbar } from "@/components/Navbar"
 import { ResumeForm } from "@/components/builder/ResumeForm"
 import { ResumePreview } from "@/components/resume/ResumePreview"
 import { AtsScorePanel } from "@/components/ats/AtsScorePanel"
@@ -46,25 +46,30 @@ export default function BuilderClient({ resume }: { resume: any }) {
   return (
     <div className="flex h-screen flex-col bg-background">
       
-      {/* --- UNIFIED NAVBAR --- */}
+      {/* --- NAVBAR --- */}
       <Navbar 
         isBuilder={true} 
         isSaving={isSaving} 
         onDownload={() => window.open("/api/resume/download", "_blank")} 
       />
 
-      {/* --- MAIN CONTENT --- */}
+      {/* --- MAIN CONTENT AREA --- */}
       <div className="flex flex-1 overflow-hidden">
         
-        {/* LEFT PANEL: EDITOR & TOOLS */}
-        <aside className="w-full max-w-xl overflow-y-auto border-r bg-background p-6 md:w-1/2 lg:w-125">
+        {/* LEFT PANEL (EDITOR) 
+           - h-full: Forces height to fill parent so scrolling works.
+           - w-full md:w-1/2 lg:w-[45%] xl:w-[40%]: Responsive width (wider on large screens).
+           - pb-32: Bottom padding so you can scroll past the last element easily.
+        */}
+        <aside className="h-full w-full overflow-y-auto border-r bg-background p-4 md:w-1/2 lg:w-[45%] xl:w-[40%] pb-32">
+          
           <Tabs defaultValue="editor" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsList className="grid w-full grid-cols-2 mb-4 sticky top-0 z-10 bg-background pb-2">
               <TabsTrigger value="editor">Editor</TabsTrigger>
               <TabsTrigger value="ats">ATS Score</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="editor" className="space-y-6">
+            <TabsContent value="editor" className="space-y-4">
               <ResumeForm form={form} />
             </TabsContent>
             
@@ -72,11 +77,12 @@ export default function BuilderClient({ resume }: { resume: any }) {
               <AtsScorePanel resume={form.watch()} />
             </TabsContent>
           </Tabs>
+
         </aside>
 
-        {/* RIGHT PANEL: PREVIEW */}
-        <main className="flex-1 bg-muted/30 p-8 overflow-y-auto">
-            <div className="mx-auto max-w-[210mm] shadow-2xl rounded-sm overflow-hidden bg-white dark:bg-white dark:text-black transition-all">
+        {/* RIGHT PANEL (PREVIEW) */}
+        <main className="hidden md:block flex-1 bg-muted/30 p-4 md:p-8 overflow-y-auto">
+            <div className="mx-auto max-w-[210mm] shadow-2xl rounded-sm overflow-hidden bg-white dark:bg-white dark:text-black transition-all transform origin-top scale-95 xl:scale-100">
                <ResumePreview data={form.watch()} />
             </div>
         </main>

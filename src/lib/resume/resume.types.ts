@@ -33,6 +33,8 @@ export type Resume = {
     title: string
     bullets: string[]
     tech: string[]
+    github?: string
+    website?: string
   }[]
 
   education: {

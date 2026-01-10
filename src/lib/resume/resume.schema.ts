@@ -36,6 +36,8 @@ const ProjectSchema = z.object({
   title: emptyStringToUndefined(z.string()),
   bullets: z.array(z.string()),
   tech: z.array(z.string()),
+  github: emptyStringToUndefined(z.string()).optional(),
+  website: emptyStringToUndefined(z.string()).optional(),
 })
 
 const EducationSchema = z.object({
