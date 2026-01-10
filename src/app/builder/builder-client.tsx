@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 
 import type { Resume } from "@/lib/resume/resume.types"
-import { ResumeSchema } from "@/lib/resume/resume.schema"
+import { ResumeDraftSchema } from "@/lib/resume/resume.schema" // Changed to DraftSchema for looser validation
 import { updateResume } from "@/app/actions/resume"
 
 import { ResumeForm } from "@/components/builder/ResumeForm"
@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button"
 
 export default function BuilderClient({ resume }: { resume: any }) {
   const form = useForm<Resume>({
-    resolver: zodResolver(ResumeSchema as any),
+    resolver: zodResolver(ResumeDraftSchema as any), // Use draft schema here too
     defaultValues: resume.data,
   })
 
@@ -40,7 +40,8 @@ export default function BuilderClient({ resume }: { resume: any }) {
     <div className="grid min-h-screen md:grid-cols-2">
       <div className="p-4 border-r border-border space-y-4">
         <Button
-          onClick={() => window.open("/api/pdf", "_blank")}
+          // ✅ FIX: Point to the correct API route
+          onClick={() => window.open("/api/resume/download", "_blank")}
           variant="outline"
         >
           Download PDF
@@ -51,7 +52,6 @@ export default function BuilderClient({ resume }: { resume: any }) {
 
       <div className="p-4 bg-muted/30">
         <ResumePreview data={form.watch()} />
-        
       </div>
     </div>
   )
