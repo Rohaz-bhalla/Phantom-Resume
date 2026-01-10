@@ -1,40 +1,53 @@
 "use client"
 
 import { UseFormReturn, useFieldArray } from "react-hook-form"
-import type { Resume } from "@/lib/resume/resume.types"
-
+import { Resume } from "@/lib/resume/resume.types" // Adjust path if needed
+import { ExperienceItem } from "./ExperienceItem" // Imports your renamed file
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { ExperienceItem } from "./ExperienceItem"
+import { Plus, Trash2 } from "lucide-react"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
-export function ExperienceSection({
-  form,
-}: {
-  form: UseFormReturn<Resume>
-}) {
+export function ExperienceSection({ form }: { form: UseFormReturn<Resume> }) {
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "experience",
   })
 
   return (
-    <section className="space-y-4">
-      <h2 className="text-xs uppercase tracking-wide text-muted-foreground">
-        Experience
-      </h2>
-      <Separator />
-
-      {fields.map((field, index) => (
-        <ExperienceItem
-          key={field.id}
-          form={form}
-          index={index}
-          onRemove={() => remove(index)}
-        />
-      ))}
+    <div className="space-y-4">
+      <Accordion type="single" collapsible className="w-full space-y-2">
+        {fields.map((field, index) => {
+           // Get data for the title
+           const company = form.watch(`experience.${index}.company`)
+           const role = form.watch(`experience.${index}.role`)
+           
+           return (
+            <AccordionItem key={field.id} value={field.id} className="border rounded-md px-2">
+              <div className="flex justify-between items-center">
+                <AccordionTrigger className="hover:no-underline text-sm font-semibold">
+                   {company || role ? `${company} - ${role}` : `Experience ${index + 1}`}
+                </AccordionTrigger>
+                <Button variant="ghost" size="sm" onClick={() => remove(index)}>
+                  <Trash2 className="h-4 w-4 text-red-500" />
+                </Button>
+              </div>
+              <AccordionContent className="p-2">
+                <ExperienceItem form={form} index={index} onRemove={() => remove(index)} />
+              </AccordionContent>
+            </AccordionItem>
+          )
+        })}
+      </Accordion>
 
       <Button
         type="button"
+        variant="outline"
+        className="w-full border-dashed"
         onClick={() =>
           append({
             company: "",
@@ -45,8 +58,8 @@ export function ExperienceSection({
           })
         }
       >
-        + Add Experience
+        <Plus className="mr-2 h-4 w-4" /> Add Experience
       </Button>
-    </section>
+    </div>
   )
 }

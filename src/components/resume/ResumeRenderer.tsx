@@ -9,26 +9,47 @@ export function ResumeRenderer({ data }: Props) {
     <article className="font-sans text-sm leading-relaxed text-foreground space-y-6">
 
       {/* HEADER */}
-      <header className="space-y-1">
-        <h1 className="text-xl font-semibold">
+      <header className="space-y-1 border-b pb-4">
+        <h1 className="text-2xl font-bold tracking-tight">
           {data.basics.name || "Your Name"}
         </h1>
 
-        <p className="text-muted-foreground">
+        <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
+          {/* Standard Fields */}
           {[
             data.basics.email,
             data.basics.phone,
             data.basics.location,
           ]
             .filter(Boolean)
-            .join(" · ")}
-        </p>
+            .map((item, i) => (
+              <span key={i}>{item}</span>
+            ))}
+
+          {/* Social Links */}
+          {data.basics.links?.linkedin && (
+            <span>LinkedIn: {data.basics.links.linkedin}</span>
+          )}
+          {data.basics.links?.github && (
+            <span>GitHub: {data.basics.links.github}</span>
+          )}
+          {data.basics.links?.twitter && (
+            <span>X: {data.basics.links.twitter}</span>
+          )}
+
+          {/* Custom Fields (Portfolio, Blog, etc.) */}
+          {data.basics.customFields?.map((field) => (
+            <span key={field.id}>
+              {field.label}: {field.value}
+            </span>
+          ))}
+        </div>
       </header>
 
       {/* SUMMARY */}
       {data.summary && (
         <section>
-          <h2 className="text-xs uppercase tracking-wide text-muted-foreground">
+          <h2 className="text-sm font-bold uppercase tracking-wider mb-2 border-b pb-1">
             Summary
           </h2>
           <p>{data.summary}</p>
@@ -36,35 +57,37 @@ export function ResumeRenderer({ data }: Props) {
       )}
 
       {/* SKILLS */}
-      {data.skills.length > 0 && (
+      {data.skills && data.skills.length > 0 && (
         <section>
-          <h2 className="text-xs uppercase tracking-wide text-muted-foreground">
+          <h2 className="text-sm font-bold uppercase tracking-wider mb-2 border-b pb-1">
             Skills
           </h2>
-          <p>{data.skills.join(", ")}</p>
+          <p className="text-sm">{data.skills.join(", ")}</p>
         </section>
       )}
 
       {/* EXPERIENCE */}
-      {data.experience.length > 0 && (
+      {data.experience && data.experience.length > 0 && (
         <section>
-          <h2 className="text-xs uppercase tracking-wide text-muted-foreground">
+          <h2 className="text-sm font-bold uppercase tracking-wider mb-2 border-b pb-1">
             Experience
           </h2>
 
           <ul className="space-y-4">
             {data.experience.map((exp, i) => (
               <li key={i}>
-                <div className="flex justify-between text-sm font-medium">
-                  <span>{exp.role} — {exp.company}</span>
-                  <span className="text-muted-foreground">
+                <div className="flex justify-between items-baseline text-sm font-medium">
+                  <span className="text-base">
+                    {exp.role} <span className="text-muted-foreground">—</span> {exp.company}
+                  </span>
+                  <span className="text-muted-foreground whitespace-nowrap text-xs">
                     {exp.startDate}
                     {exp.endDate ? ` – ${exp.endDate}` : ""}
                   </span>
                 </div>
 
                 {exp.bullets.length > 0 && (
-                  <ul className="mt-2 list-disc pl-5 space-y-1">
+                  <ul className="mt-2 list-disc pl-5 space-y-1 text-sm">
                     {exp.bullets.map((b, j) => (
                       <li key={j}>{b}</li>
                     ))}
@@ -77,23 +100,32 @@ export function ResumeRenderer({ data }: Props) {
       )}
 
       {/* PROJECTS */}
-      {data.projects.length > 0 && (
+      {data.projects && data.projects.length > 0 && (
         <section>
-          <h2 className="text-xs uppercase tracking-wide text-muted-foreground">
+          <h2 className="text-sm font-bold uppercase tracking-wider mb-2 border-b pb-1">
             Projects
           </h2>
 
           <ul className="space-y-4">
             {data.projects.map((proj, i) => (
               <li key={i}>
-                <p className="font-medium">{proj.title}</p>
+                <div className="flex justify-between items-baseline">
+                  <span className="font-medium text-base">{proj.title}</span>
+                </div>
 
                 {proj.bullets.length > 0 && (
-                  <ul className="mt-1 list-disc pl-5 space-y-1">
+                  <ul className="mt-2 list-disc pl-5 space-y-1 text-sm">
                     {proj.bullets.map((b, j) => (
                       <li key={j}>{b}</li>
                     ))}
                   </ul>
+                )}
+                
+                {/* Tech Stack for Projects */}
+                {proj.tech && proj.tech.length > 0 && (
+                   <p className="mt-1 text-xs text-muted-foreground">
+                      Stack: {proj.tech.join(", ")}
+                   </p>
                 )}
               </li>
             ))}
@@ -102,21 +134,45 @@ export function ResumeRenderer({ data }: Props) {
       )}
 
       {/* EDUCATION */}
-      {data.education.length > 0 && (
+      {data.education && data.education.length > 0 && (
         <section>
-          <h2 className="text-xs uppercase tracking-wide text-muted-foreground">
+          <h2 className="text-sm font-bold uppercase tracking-wider mb-2 border-b pb-1">
             Education
           </h2>
 
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {data.education.map((edu, i) => (
-              <li key={i}>
-                <p className="font-medium">
-                  {edu.degree} — {edu.institute}
-                </p>
-                <p className="text-muted-foreground text-sm">
+              <li key={i} className="flex justify-between items-baseline text-sm">
+                <div>
+                  <div className="font-medium">{edu.institute}</div>
+                  <div className="text-muted-foreground">{edu.degree}</div>
+                </div>
+                <div className="text-muted-foreground text-xs whitespace-nowrap">
                   {edu.year}
-                </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* CERTIFICATIONS */}
+      {data.certifications && data.certifications.length > 0 && (
+        <section>
+          <h2 className="text-sm font-bold uppercase tracking-wider mb-2 border-b pb-1">
+            Certifications
+          </h2>
+          <ul className="space-y-2">
+            {data.certifications.map((cert, i) => (
+              <li key={i} className="flex justify-between items-baseline text-sm">
+                <div>
+                  <span className="font-semibold">{cert.name}</span>
+                  <span className="text-muted-foreground mx-1">—</span>
+                  <span>{cert.issuer}</span>
+                </div>
+                <span className="text-muted-foreground whitespace-nowrap text-xs">
+                  {cert.date}
+                </span>
               </li>
             ))}
           </ul>

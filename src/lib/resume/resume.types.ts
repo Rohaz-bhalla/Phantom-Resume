@@ -9,6 +9,12 @@ export type Resume = {
       github?: string
       twitter?: string
     }
+    // New Custom Fields
+    customFields?: {
+      id: string
+      label: string
+      value: string
+    }[]
   }
 
   summary: string
@@ -33,5 +39,13 @@ export type Resume = {
     institute: string
     degree: string
     year: string
+  }[]
+  
+  // New Certifications
+  certifications: {
+    name: string
+    issuer: string
+    date: string
+    url?: string
   }[]
 }
