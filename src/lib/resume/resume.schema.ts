@@ -1,8 +1,7 @@
 import { z } from "zod"
 import { emptyStringToUndefined } from "@/lib/utils/zod"
 
-// --- SUB-SCHEMAS (Strict) ---
-// We define these separately so we can reuse them or make them partial later
+// --- SUB-SCHEMAS ---
 
 const LinkSchema = z.object({
   linkedin: emptyStringToUndefined(z.string()).optional(),
@@ -10,7 +9,6 @@ const LinkSchema = z.object({
   twitter: emptyStringToUndefined(z.string()).optional(),
 })
 
-// 1. NEW: Custom Field Schema (for extra links/info in Header like Portfolio, Blog)
 const CustomFieldSchema = z.object({
   id: z.string(),
   label: z.string(),
@@ -18,16 +16,11 @@ const CustomFieldSchema = z.object({
 })
 
 const BasicsSchema = z.object({
-  name: emptyStringToUndefined(
-    z.string().min(2, "Name must be at least 2 characters")
-  ),
-  email: emptyStringToUndefined(
-    z.string().email("Invalid email address")
-  ),
+  name: emptyStringToUndefined(z.string().min(2, "Name must be at least 2 characters")),
+  email: emptyStringToUndefined(z.string().email("Invalid email address")),
   phone: emptyStringToUndefined(z.string()).optional(),
   location: emptyStringToUndefined(z.string()).optional(),
   links: LinkSchema.optional(),
-  // 2. Added customFields to Basics
   customFields: z.array(CustomFieldSchema).optional(),
 })
 
@@ -51,7 +44,6 @@ const EducationSchema = z.object({
   year: emptyStringToUndefined(z.string()),
 })
 
-// 3. NEW: Certification Schema
 const CertificationSchema = z.object({
   name: emptyStringToUndefined(z.string()),
   issuer: emptyStringToUndefined(z.string()),
@@ -59,7 +51,20 @@ const CertificationSchema = z.object({
   url: emptyStringToUndefined(z.string()).optional(),
 })
 
-// --- MAIN SCHEMA (Strict - for Download/Export) ---
+// --- NEW: Custom Section Schema ---
+const CustomSectionItemSchema = z.object({
+  id: z.string(),
+  name: z.string(), 
+  description: z.string(),
+})
+
+const CustomSectionSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  items: z.array(CustomSectionItemSchema),
+})
+
+// --- MAIN SCHEMA (Strict) ---
 export const ResumeSchema = z.object({
   basics: BasicsSchema,
   summary: emptyStringToUndefined(z.string()).optional(),
@@ -67,40 +72,29 @@ export const ResumeSchema = z.object({
   experience: z.array(ExperienceSchema),
   projects: z.array(ProjectSchema),
   education: z.array(EducationSchema),
-  // 4. Added certifications array
   certifications: z.array(CertificationSchema),
+  // Added customSections
+  customSections: z.array(CustomSectionSchema).optional(),
 })
 
-// --- DRAFT SCHEMA (Loose - for Autosave) ---
-// This allows empty strings, partial objects, and invalid emails during editing.
-
+// --- DRAFT SCHEMA (Loose) ---
 export const ResumeDraftSchema = z.object({
-  basics: z.object({
-    name: z.string().optional(),
-    email: z.string().optional(),
-    phone: z.string().optional(),
-    location: z.string().optional(),
-    links: z.object({
-      linkedin: z.string().optional(),
-      github: z.string().optional(),
-      twitter: z.string().optional(),
-    }).optional(),
-    // Loose validation for custom fields
-    customFields: z.array(z.object({
-      id: z.string(), 
-      label: z.string(), 
-      value: z.string()
-    })).optional(),
-  }).optional(),
-
+  basics: z.any(),
   summary: z.string().optional(),
   skills: z.array(z.string()).optional(),
-  
-  // We use z.any() for arrays here to prevent validation errors 
-  // if a user has a "half-filled" item.
   experience: z.array(z.any()).optional(),
   projects: z.array(z.any()).optional(),
   education: z.array(z.any()).optional(),
-  // Loose validation for certifications
   certifications: z.array(z.any()).optional(),
+  
+  // Loose validation for autosave
+  customSections: z.array(z.object({
+    id: z.string(),
+    title: z.string(),
+    items: z.array(z.object({
+      id: z.string(),
+      name: z.string(),
+      description: z.string(),
+    })),
+  })).optional(),
 })

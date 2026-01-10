@@ -9,7 +9,7 @@ export type Resume = {
       github?: string
       twitter?: string
     }
-    // New Custom Fields
+    // Simple custom fields (like Portfolio URL) inside "Personal Info"
     customFields?: {
       id: string
       label: string
@@ -41,11 +41,21 @@ export type Resume = {
     year: string
   }[]
   
-  // New Certifications
   certifications: {
     name: string
     issuer: string
     date: string
     url?: string
+  }[]
+
+  // --- NEW: Dynamic Custom Sections (e.g. "Volunteering", "Publications") ---
+  customSections: {
+    id: string
+    title: string // The Section Header
+    items: {
+      id: string
+      name: string // Item Title (e.g. "Soup Kitchen Volunteer")
+      description: string // Details or URL
+    }[]
   }[]
 }

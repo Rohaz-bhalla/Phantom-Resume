@@ -26,7 +26,7 @@ export function ResumeRenderer({ data }: Props) {
               <span key={i}>{item}</span>
             ))}
 
-          {/* Social Links */}
+          {/* Social Links (Hardcoded) */}
           {data.basics.links?.linkedin && (
             <span>LinkedIn: {data.basics.links.linkedin}</span>
           )}
@@ -37,7 +37,7 @@ export function ResumeRenderer({ data }: Props) {
             <span>X: {data.basics.links.twitter}</span>
           )}
 
-          {/* Custom Fields (Portfolio, Blog, etc.) */}
+          {/* Dynamic Custom Links (Portfolio, Blog, etc.) */}
           {data.basics.customFields?.map((field) => (
             <span key={field.id}>
               {field.label}: {field.value}
@@ -121,7 +121,6 @@ export function ResumeRenderer({ data }: Props) {
                   </ul>
                 )}
                 
-                {/* Tech Stack for Projects */}
                 {proj.tech && proj.tech.length > 0 && (
                    <p className="mt-1 text-xs text-muted-foreground">
                       Stack: {proj.tech.join(", ")}
@@ -178,6 +177,25 @@ export function ResumeRenderer({ data }: Props) {
           </ul>
         </section>
       )}
+
+      {/* --- NEW: RENDER CUSTOM SECTIONS --- */}
+      {data.customSections && data.customSections.map((section) => (
+        <section key={section.id}>
+           <h2 className="text-sm font-bold uppercase tracking-wider mb-2 border-b pb-1">
+             {section.title}
+           </h2>
+           <ul className="space-y-3">
+             {section.items.map((item) => (
+               <li key={item.id}>
+                 <div className="font-medium text-base">{item.name}</div>
+                 <div className="text-sm whitespace-pre-wrap text-muted-foreground">
+                   {item.description}
+                 </div>
+               </li>
+             ))}
+           </ul>
+        </section>
+      ))}
 
     </article>
   )
