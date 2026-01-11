@@ -1,35 +1,54 @@
 "use client"
 
-import { Button } from "@base-ui/react"
+import { Button } from "@/components/ui/button" // Ensure we use your Shadcn Button
+import { Loader2, Download } from "lucide-react"
+import { useState } from "react"
 
 export function DownloadButton() {
+  const [loading, setLoading] = useState(false)
+
   const handleDownload = async () => {
-    const res = await fetch("/api/resume/download")
+    setLoading(true)
+    try {
+      const res = await fetch("/api/resume/download")
 
-    if (!res.ok) {
-      alert("Download failed")
-      return
+      if (!res.ok) {
+        alert("Download failed. Please try again.")
+        return
+      }
+
+      const blob = await res.blob()
+      const url = window.URL.createObjectURL(blob)
+
+      const a = document.createElement("a")
+      a.href = url
+      // FIXED: Extension is now .pdf
+      a.download = "resume.pdf" 
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error(error)
+      alert("An error occurred while downloading.")
+    } finally {
+      setLoading(false)
     }
-
-    const blob = await res.blob()
-    const url = window.URL.createObjectURL(blob)
-
-    const a = document.createElement("a")
-    a.href = url
-    a.download = "resume.json"
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-
-    URL.revokeObjectURL(url)
   }
 
   return (
     <Button
       onClick={handleDownload}
-      className="px-4 py-2 rounded border"
+      disabled={loading}
+      variant="default"
     >
-      Download Resume
+      {loading ? (
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+      ) : (
+        <Download className="mr-2 h-4 w-4" />
+      )}
+      Download PDF
     </Button>
   )
 }

@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Required for Puppeteer to work in Next.js 16
-  serverExternalPackages: ["puppeteer"],
+  // CRITICAL: Prevent bundling issues for these libraries
+  serverExternalPackages: ["puppeteer", "pdf-parse"],
 };
 
 export default nextConfig;

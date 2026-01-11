@@ -20,89 +20,232 @@ export async function GET() {
       return new NextResponse("Resume not found", { status: 404 })
     }
 
-    // 1. Launch Puppeteer
     const browser = await puppeteer.launch({
       headless: true,
-      args: [
-        "--no-sandbox", 
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage" // often fixes memory crashes
-      ],
+      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
     })
     
     const page = await browser.newPage()
 
-    // 2. HTML Content
-    // (Using optional chaining ?. to prevent crashes on empty data)
     const data = resume.data as any
     const basics = data.basics || {}
-    
+
+    // Helper for rendering links safely
+    const renderLink = (url: string, label: string) => 
+      url ? `<a href="${url}" target="_blank" style="color: #2563eb; text-decoration: none;">${label}</a>` : ""
+
     const htmlContent = `
       <!DOCTYPE html>
       <html>
         <head>
           <style>
-            body { font-family: sans-serif; padding: 40px; color: #333; line-height: 1.5; }
-            h1 { margin-bottom: 5px; text-transform: uppercase; }
-            .contact { font-size: 14px; color: #666; margin-bottom: 20px; }
-            .section { margin-bottom: 20px; }
-            .section-title { font-weight: bold; border-bottom: 1px solid #ccc; margin-bottom: 10px; text-transform: uppercase; }
-            .job { margin-bottom: 15px; }
-            .job-header { font-weight: bold; display: flex; justify-content: space-between; }
-            .job-role { font-style: italic; font-size: 0.9em; margin-bottom: 5px;}
-            ul { margin-top: 5px; padding-left: 20px; }
-            li { margin-bottom: 2px; }
+            /* 1. COMPACT PAGE SETTINGS 
+               - 15mm margins allow more content while staying professional.
+               - A4 format standard.
+            */
+            @page { margin: 15mm; size: A4; }
+            
+            body { 
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+              color: #18181b; 
+              line-height: 1.4; /* Tighter line height for better density */
+              font-size: 12px;  /* 12px is standard 9-10pt print size */
+            }
+            
+            a { color: #2563eb; text-decoration: none; }
+            
+            /* Header */
+            h1 { margin: 0 0 4px 0; font-size: 22px; text-transform: uppercase; letter-spacing: -0.5px; font-weight: 800; }
+            
+            .header-meta { 
+              font-size: 11px; 
+              color: #52525b; 
+              display: flex; 
+              flex-wrap: wrap; 
+              gap: 8px; 
+              row-gap: 2px; 
+              margin-bottom: 12px;
+            }
+            .header-meta span:not(:last-child):after { content: "•"; margin-left: 8px; color: #d4d4d8; }
+            
+            /* Sections */
+            .section { margin-top: 16px; }
+            
+            .section-title { 
+              font-size: 13px; 
+              font-weight: 700; 
+              text-transform: uppercase; 
+              border-bottom: 2px solid #18181b; /* Thicker, clearer divider */
+              padding-bottom: 2px; 
+              margin-bottom: 8px; 
+              letter-spacing: 0.05em;
+              
+              /* Keep title with its first item */
+              page-break-after: avoid; 
+            }
+            
+            /* Items (Job, Project, etc) */
+            .item { 
+              margin-bottom: 10px; 
+              
+              /* CRITICAL: Prevent items from splitting across pages */
+              page-break-inside: avoid; 
+            }
+            
+            .row { display: flex; justify-content: space-between; align-items: baseline; }
+            .title { font-weight: 700; font-size: 13px; }
+            .subtitle { font-style: italic; color: #3f3f46; font-size: 12px; }
+            .date { font-size: 11px; color: #52525b; font-family: monospace; font-weight: 500; white-space: nowrap; }
+            
+            /* Lists */
+            ul { margin: 2px 0 0 0; padding-left: 16px; }
+            li { margin-bottom: 1px; }
+
+            /* Tech Stack */
+            .stack { font-size: 10px; color: #52525b; margin-top: 2px; font-weight: 500; }
           </style>
         </head>
         <body>
-          <h1>${basics.name || "Your Name"}</h1>
-          <div class="contact">
-            ${[basics.email, basics.phone, basics.location].filter(Boolean).join(" | ")}
+          
+          <div>
+            <h1>${basics.name || "Your Name"}</h1>
+            <div class="header-meta">
+              ${[basics.email, basics.phone, basics.location].filter(Boolean).map(t => `<span>${t}</span>`).join("")}
+              
+              ${basics.links?.linkedin ? `<span>LinkedIn: ${renderLink(basics.links.linkedin, "Profile")}</span>` : ""}
+              ${basics.links?.github ? `<span>GitHub: ${renderLink(basics.links.github, "Profile")}</span>` : ""}
+              ${basics.links?.twitter ? `<span>X: ${renderLink(basics.links.twitter, "Profile")}</span>` : ""}
+              
+              ${(basics.customFields || []).map((f: any) => 
+                  `<span>${f.label}: ${renderLink(f.value, "Link")}</span>`
+              ).join("")}
+            </div>
           </div>
 
           ${data.summary ? `
             <div class="section">
               <div class="section-title">Summary</div>
-              <div>${data.summary}</div>
+              <div style="text-align: justify;">${data.summary}</div>
             </div>
           ` : ""}
 
-          <div class="section">
-            <div class="section-title">Experience</div>
-            ${(data.experience || []).map((exp: any) => `
-              <div class="job">
-                <div class="job-header">
-                  <span>${exp.company || "Company"}</span> 
-                  <span>${exp.startDate || ""} - ${exp.endDate || "Present"}</span>
+          ${data.skills && data.skills.length > 0 ? `
+            <div class="section">
+              <div class="section-title">Skills</div>
+              <div style="line-height: 1.5;">${data.skills.join(" • ")}</div>
+            </div>
+          ` : ""}
+
+          ${data.experience && data.experience.length > 0 ? `
+            <div class="section">
+              <div class="section-title">Experience</div>
+              ${data.experience.map((exp: any) => `
+                <div class="item">
+                  <div class="row">
+                    <span class="title">${exp.role || "Role"}</span>
+                    <span class="date">${exp.startDate || ""} ${exp.endDate ? `- ${exp.endDate}` : ""}</span>
+                  </div>
+                  <div class="subtitle">${exp.company || "Company"}</div>
+                  <ul>
+                    ${(exp.bullets || []).map((b: string) => `<li>${b}</li>`).join("")}
+                  </ul>
                 </div>
-                <div class="job-role">${exp.role || "Role"}</div>
-                <ul>
-                  ${(exp.bullets || []).map((b: string) => `<li>${b}</li>`).join("")}
-                </ul>
-              </div>
-            `).join("")}
-          </div>
+              `).join("")}
+            </div>
+          ` : ""}
+
+          ${data.projects && data.projects.length > 0 ? `
+            <div class="section">
+              <div class="section-title">Projects</div>
+              ${data.projects.map((proj: any) => `
+                <div class="item">
+                  <div class="row">
+                    <span class="title">
+                      ${proj.title}
+                      <span style="font-size: 10px; font-weight: normal; margin-left: 6px;">
+                         ${proj.github ? `[${renderLink(proj.github, "Code")}]` : ""}
+                         ${proj.website ? `[${renderLink(proj.website, "Demo")}]` : ""}
+                      </span>
+                    </span>
+                  </div>
+                  ${proj.tech && proj.tech.length > 0 ? `<div class="stack">Stack: ${proj.tech.join(" • ")}</div>` : ""}
+                  <ul>
+                    ${(proj.bullets || []).map((b: string) => `<li>${b}</li>`).join("")}
+                  </ul>
+                </div>
+              `).join("")}
+            </div>
+          ` : ""}
+
+          ${data.education && data.education.length > 0 ? `
+            <div class="section">
+              <div class="section-title">Education</div>
+              ${data.education.map((edu: any) => `
+                <div class="item">
+                  <div class="row">
+                    <span class="title">${edu.institute}</span>
+                    <span class="date">${edu.year}</span>
+                  </div>
+                  <div class="subtitle">${edu.degree}</div>
+                </div>
+              `).join("")}
+            </div>
+          ` : ""}
+
+          ${data.certifications && data.certifications.length > 0 ? `
+            <div class="section">
+              <div class="section-title">Certifications</div>
+              ${data.certifications.map((cert: any) => `
+                <div class="item">
+                  <div class="row">
+                    <span class="title">
+                        ${cert.name}
+                        ${cert.url ? `<span style="font-size:10px; margin-left:5px;">[${renderLink(cert.url, "Link")}]</span>` : ""}
+                    </span>
+                    <span class="date">${cert.date}</span>
+                  </div>
+                  <div class="subtitle">${cert.issuer}</div>
+                </div>
+              `).join("")}
+            </div>
+          ` : ""}
+
+          ${data.customSections && data.customSections.map((sec: any) => `
+             <div class="section">
+                <div class="section-title">${sec.title}</div>
+                ${sec.items.map((item: any) => `
+                    <div class="item">
+                        <div class="title">${item.name}</div>
+                        <div style="white-space: pre-wrap; color: #3f3f46;">${item.description}</div>
+                    </div>
+                `).join("")}
+             </div>
+          `).join("")}
+
         </body>
       </html>
     `
 
-    // 3. Generate PDF
     await page.setContent(htmlContent, { waitUntil: "domcontentloaded" })
-    const pdfBuffer = await page.pdf({ format: "A4", printBackground: true })
+    
+    // Using standard PDF margins instead of CSS margins for better printer control
+    const pdfBuffer = await page.pdf({ 
+      format: "A4", 
+      printBackground: true,
+      margin: { top: "15mm", bottom: "15mm", left: "15mm", right: "15mm" }
+    })
 
     await browser.close()
 
-    // 4. Return PDF
     return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${basics.name || "resume"}.pdf"`,
+        "Content-Disposition": `attachment; filename="${(basics.name || "resume").replace(/\s+/g, '_')}.pdf"`,
       },
     })
 
   } catch (error) {
     console.error("PDF GENERATION ERROR:", error)
-    // Return the actual error to the browser so you can see it
     return new NextResponse(
       JSON.stringify({ error: String(error) }), 
       { status: 500, headers: { "Content-Type": "application/json" } }

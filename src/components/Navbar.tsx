@@ -84,25 +84,25 @@ export function Navbar({ isBuilder = false, isSaving = false, onDownload }: Navb
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem asChild>
-                <Link href="https://github.com/your-username" target="_blank" className="cursor-pointer flex items-center gap-2">
+                <Link href="https://github.com/Rohaz-bhalla" target="_blank" className="cursor-pointer flex items-center gap-2">
                   <SiGithub className="h-4 w-4" />
                   <span>GitHub</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="https://linkedin.com/in/your-username" target="_blank" className="cursor-pointer flex items-center gap-2">
+                <Link href="https://linkedin.com/in/rohaz-bhalla" target="_blank" className="cursor-pointer flex items-center gap-2">
                   <SiLinkedin className="h-4 w-4 text-[#0A66C2]" />
                   <span>LinkedIn</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="https://x.com/your-username" target="_blank" className="cursor-pointer flex items-center gap-2">
+                <Link href="https://x.com/RohazBhalla" target="_blank" className="cursor-pointer flex items-center gap-2">
                   <SiX className="h-3.5 w-3.5" />
                   <span>X (Twitter)</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="https://buymeacoffee.com/your-username" target="_blank" className="cursor-pointer flex items-center gap-2 font-medium hover:bg-orange-50 dark:hover:bg-orange-400">
+                <Link href="https://buymeacoffee.com/rohaz.bhalla" target="_blank" className="cursor-pointer flex items-center gap-2 font-medium hover:bg-orange-50 dark:hover:bg-orange-400">
                   <SiBuymeacoffee className="h-4 w-4 text-[#FFDD00]" />
                   <span className="text-[#FF813F]">Buy me a Coffee</span>
                 </Link>
