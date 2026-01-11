@@ -20,8 +20,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED 1
 
 # --- PUBLIC BUILD-TIME VARIABLES ---
-# These are required for 'next build' to compile your static pages.
-# It is safe to put NEXT_PUBLIC_ keys here as they are visible in the browser anyway.
+# Required for 'next build' to compile static pages.
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_aGlwLWd1bGwtODUuY2xlcmsuYWNjb3VudHMuZGV2JA
 ENV NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
 ENV NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
@@ -39,8 +38,7 @@ ENV NEXT_TELEMETRY_DISABLED 1
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true
 ENV PUPPETEER_EXECUTABLE_PATH /usr/bin/google-chrome-stable
 
-# --- CRITICAL: Install Chrome for Puppeteer ---
-# This installs the actual Chrome browser in the Linux container for PDF generation
+# --- Install Chrome for Puppeteer ---
 RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
@@ -51,14 +49,20 @@ RUN apt-get update && apt-get install -y \
       --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
-# Add user so we don't run as root
+# Add user
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy built artifacts from the builder stage
+# ✅ FIX 1: Explicitly create a writable home directory
+RUN mkdir -p /home/nextjs && chown -R nextjs:nodejs /home/nextjs
+
+# Copy built artifacts
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# ✅ FIX 2: Set the HOME environment variable so Chrome knows where to write
+ENV HOME=/home/nextjs
 
 USER nextjs
 
