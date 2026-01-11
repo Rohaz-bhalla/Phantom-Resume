@@ -19,6 +19,14 @@ COPY . .
 # Set environment to build mode
 ENV NEXT_TELEMETRY_DISABLED 1
 
+# --- PUBLIC BUILD-TIME VARIABLES ---
+# These are required for 'next build' to compile your static pages.
+# It is safe to put NEXT_PUBLIC_ keys here as they are visible in the browser anyway.
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_aGlwLWd1bGwtODUuY2xlcmsuYWNjb3VudHMuZGV2JA
+ENV NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+ENV NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+ENV NEXT_PUBLIC_APP_URL=https://phantom-resume.onrender.com
+
 # Run the build
 RUN pnpm run build
 
@@ -32,7 +40,7 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true
 ENV PUPPETEER_EXECUTABLE_PATH /usr/bin/google-chrome-stable
 
 # --- CRITICAL: Install Chrome for Puppeteer ---
-# We install the actual Chrome browser in the Linux container
+# This installs the actual Chrome browser in the Linux container for PDF generation
 RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
@@ -47,7 +55,7 @@ RUN apt-get update && apt-get install -y \
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy built artifacts
+# Copy built artifacts from the builder stage
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
