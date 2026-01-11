@@ -14,7 +14,7 @@ import { ProjectsSection } from "./ProjectsSection"
 import { SkillsSection } from './SkillsSection'
 import { CustomSectionManager } from "./CustomSectionManager"
 import { CustomFieldsSection } from "./CustomFieldsSection"
-import { ImportDialog } from "./ImportDialog" // <--- IMPORT THIS
+import { ImportDialog } from "./ImportDialog" 
 
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -32,7 +32,13 @@ export function ResumeForm({ form }: { form: UseFormReturn<Resume> }) {
   const handleReset = () => {
     if (confirm("Resetting will clear all data. Continue?")) {
       form.reset({
-        basics: { name: "", email: "", summary: "", customFields: [] },
+        basics: { 
+          name: "", 
+          email: "", 
+          // summary: "", <--- REMOVED from basics
+          customFields: [] 
+        },
+        summary: "", // <--- ADDED to root level
         experience: [],
         projects: [],
         skills: [],
@@ -51,7 +57,6 @@ export function ResumeForm({ form }: { form: UseFormReturn<Resume> }) {
         <h2 className="text-lg font-semibold tracking-tight">Editor</h2>
         
         <div className="flex gap-2">
-            {/* --- NEW IMPORT BUTTON --- */}
             <ImportDialog form={form} />
             
             <Button type="button" variant="destructive" size="sm" onClick={handleReset}>
@@ -74,7 +79,7 @@ export function ResumeForm({ form }: { form: UseFormReturn<Resume> }) {
               <div className="space-y-2"> <Label>Email</Label> <Input {...form.register("basics.email")} /> </div>
             </div>
             
-            {/* Note: Summary is often root level, but we can edit it here or in a separate section if you prefer */}
+            {/* Summary is registered at the root level: form.register("summary") */}
             <div className="space-y-2"> 
                 <Label>Summary</Label> 
                 <Textarea className="min-h-[100px]" {...form.register("summary")} /> 

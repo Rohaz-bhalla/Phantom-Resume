@@ -71,13 +71,15 @@ export async function GET() {
             /* Sections */
             .section { margin-top: 16px; }
             
-            .section-title { 
+            /* ATS IMPROVEMENT: Use h2 for section titles */
+            h2 { 
               font-size: 13px; 
               font-weight: 700; 
               text-transform: uppercase; 
               border-bottom: 2px solid #18181b; /* Thicker, clearer divider */
               padding-bottom: 2px; 
               margin-bottom: 8px; 
+              margin-top: 0; /* Reset default browser margin */
               letter-spacing: 0.05em;
               
               /* Keep title with its first item */
@@ -124,21 +126,21 @@ export async function GET() {
 
           ${data.summary ? `
             <div class="section">
-              <div class="section-title">Summary</div>
+              <h2>Summary</h2>
               <div style="text-align: justify;">${data.summary}</div>
             </div>
           ` : ""}
 
           ${data.skills && data.skills.length > 0 ? `
             <div class="section">
-              <div class="section-title">Skills</div>
+              <h2>Skills</h2>
               <div style="line-height: 1.5;">${data.skills.join(" • ")}</div>
             </div>
           ` : ""}
 
           ${data.experience && data.experience.length > 0 ? `
             <div class="section">
-              <div class="section-title">Experience</div>
+              <h2>Experience</h2>
               ${data.experience.map((exp: any) => `
                 <div class="item">
                   <div class="row">
@@ -156,7 +158,7 @@ export async function GET() {
 
           ${data.projects && data.projects.length > 0 ? `
             <div class="section">
-              <div class="section-title">Projects</div>
+              <h2>Projects</h2>
               ${data.projects.map((proj: any) => `
                 <div class="item">
                   <div class="row">
@@ -179,7 +181,7 @@ export async function GET() {
 
           ${data.education && data.education.length > 0 ? `
             <div class="section">
-              <div class="section-title">Education</div>
+              <h2>Education</h2>
               ${data.education.map((edu: any) => `
                 <div class="item">
                   <div class="row">
@@ -194,7 +196,7 @@ export async function GET() {
 
           ${data.certifications && data.certifications.length > 0 ? `
             <div class="section">
-              <div class="section-title">Certifications</div>
+              <h2>Certifications</h2>
               ${data.certifications.map((cert: any) => `
                 <div class="item">
                   <div class="row">
@@ -212,7 +214,7 @@ export async function GET() {
 
           ${data.customSections && data.customSections.map((sec: any) => `
              <div class="section">
-                <div class="section-title">${sec.title}</div>
+                <h2>${sec.title}</h2>
                 ${sec.items.map((item: any) => `
                     <div class="item">
                         <div class="title">${item.name}</div>
