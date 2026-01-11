@@ -8,6 +8,7 @@ export type Resume = {
       linkedin?: string
       github?: string
       twitter?: string
+      portfolio?: string
     }
     // Simple custom fields (like Portfolio URL) inside "Personal Info"
     customFields?: {

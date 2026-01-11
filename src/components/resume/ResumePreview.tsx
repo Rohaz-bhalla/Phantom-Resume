@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import type { Resume } from "@/lib/resume/resume.types"
 import { ResumeRenderer, FontSize } from "./ResumeRenderer"
 import { Button } from "@/components/ui/button"
@@ -22,6 +22,7 @@ export function ResumePreview({ data }: { data: Resume }) {
   const [fontSize, setFontSize] = useState<FontSize>("md")
   const [pageSize, setPageSize] = useState<PageSize>("a4")
   const [isMounted, setIsMounted] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   // Avoid hydration mismatch
   useEffect(() => {
@@ -45,52 +46,70 @@ export function ResumePreview({ data }: { data: Resume }) {
 
   if (!isMounted) return null
 
+  // Height definitions for markers
+  const A4_HEIGHT_MM = 297
+  const LETTER_HEIGHT_MM = 279.4
+  const pageHeightMm = pageSize === "a4" ? A4_HEIGHT_MM : LETTER_HEIGHT_MM
+
   return (
-    <div className="relative flex flex-col h-full bg-zinc-100 dark:bg-zinc-950/90 dark:bg-[radial-gradient(#3f3f46_1px,transparent_1px)] [background-size:16px_16px]">
+    <div className="relative flex flex-col h-full bg-zinc-100 dark:bg-zinc-950/50 dark:bg-[radial-gradient(#3f3f46_1px,transparent_1px)] bg-size-[16px_16px]">
       
-      {/* --- 1. CRITICAL FIX: Inject Dynamic Print CSS --- */}
+      {/* --- PRINT STYLES --- */}
       <style suppressHydrationWarning>{`
         @media print {
-          @page {
-            size: ${pageSize} portrait;
-            margin: 0;
+          body * {
+            visibility: hidden;
           }
-          body {
-            background: white;
+          #resume-paper, #resume-paper * {
+            visibility: visible;
           }
           #resume-paper {
-            box-shadow: none !important;
+            position: absolute;
+            left: 0;
+            top: 0;
             margin: 0 !important;
+            padding: 0 !important;
             width: 100% !important;
             height: 100% !important;
+            box-shadow: none !important;
+            background: white !important;
+            color: black !important;
+          }
+          /* Hide the page break markers when printing */
+          .page-break-marker {
+            display: none !important;
+          }
+          @page {
+            size: ${pageSize} portrait;
+            margin: 0; 
           }
         }
       `}</style>
 
-      {/* --- FLOATING COMMAND BAR --- */}
+      {/* --- TOOLBAR --- */}
       <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 print:hidden">
-        <div className="flex items-center gap-3 px-3 py-2 rounded-full border border-zinc-200 dark:border-white/10 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl shadow-lg transition-all hover:shadow-xl hover:bg-white/90 dark:hover:bg-zinc-900/90">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl shadow-xl transition-all">
             
             {/* Font Controls */}
-            <div className="flex items-center gap-1 pr-3 border-r border-zinc-200 dark:border-white/10">
+            <div className="flex items-center gap-1 pr-3 border-r border-zinc-200 dark:border-zinc-800">
                 <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-8 w-8 rounded-full text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-white/10 disabled:opacity-30" 
+                    className="h-8 w-8 rounded-full text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800" 
                     onClick={() => adjustFontSize("down")}
                     disabled={fontSize === "sm"}
                 >
                     <Minus className="h-4 w-4" />
                 </Button>
                 
-                <span className="text-xs font-mono font-medium w-8 text-center text-zinc-600 dark:text-zinc-300 select-none">
+                <span className="text-xs font-mono font-medium w-8 text-center text-zinc-900 dark:text-zinc-200 select-none">
                     {fontSize.toUpperCase()}
                 </span>
                 
                 <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-8 w-8 rounded-full text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-white/10 disabled:opacity-30" 
+                    className="h-8 w-8 rounded-full text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800" 
                     onClick={() => adjustFontSize("up")}
                     disabled={fontSize === "lg"}
                 >
@@ -98,71 +117,86 @@ export function ResumePreview({ data }: { data: Resume }) {
                 </Button>
             </div>
 
-            {/* Page Size Selector */}
+            {/* Page Size */}
             <Select value={pageSize} onValueChange={(v) => setPageSize(v as PageSize)}>
-                <SelectTrigger className="h-8 border-0 bg-transparent focus:ring-0 gap-2 text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:text-black dark:hover:text-white transition-colors w-[110px]">
+                <SelectTrigger className="h-8 border-0 bg-transparent focus:ring-0 gap-2 text-xs font-medium text-zinc-700 dark:text-zinc-200 w-27.5">
                     <FileText className="h-4 w-4" />
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="a4" className="text-xs">
-                        <div className="flex items-center justify-between w-full gap-2">
-                            <span>A4 (Intl)</span>
-                            {pageSize === 'a4' && <Check className="h-3 w-3" />}
-                        </div>
-                    </SelectItem>
-                    <SelectItem value="letter" className="text-xs">
-                         <div className="flex items-center justify-between w-full gap-2">
-                            <span>Letter (US)</span>
-                            {pageSize === 'letter' && <Check className="h-3 w-3" />}
-                        </div>
-                    </SelectItem>
+                    <SelectItem value="a4" className="text-xs">A4 (Intl)</SelectItem>
+                    <SelectItem value="letter" className="text-xs">Letter (US)</SelectItem>
                 </SelectContent>
             </Select>
 
             {/* Print Button */}
-            <div className="pl-1 border-l border-zinc-200 dark:border-white/10">
+            {/* <div className="pl-1 border-l border-zinc-200 dark:border-zinc-800">
                 <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-8 w-8 rounded-full text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-500/20"
+                    className="h-8 w-8 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10"
                     onClick={handlePrint}
-                    title="Print / Save as PDF"
+                    title="Print to PDF"
                 >
                     <Printer className="h-4 w-4" />
                 </Button>
-            </div>
+            </div> */}
         </div>
       </div>
 
       {/* --- PREVIEW CANVAS --- */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden pt-24 pb-20 flex justify-center scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700">
         
-        {/* Paper Simulation */}
         <div 
             id="resume-paper"
+            ref={containerRef}
             className={cn(
-                "bg-white transition-all duration-500 ease-in-out origin-top",
-                "shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] dark:shadow-[0_0_100px_-20px_rgba(255,255,255,0.05)]", 
-                "print:shadow-none print:w-full print:h-full print:m-0 print:absolute print:top-0 print:left-0"
+                "relative bg-white transition-all duration-300 ease-in-out origin-top",
+                "shadow-2xl dark:shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)]", 
+                "print:shadow-none"
             )}
             style={{
-                // Explicit sizes in mm ensure 'what you see is what you print'
                 width: pageSize === "a4" ? "210mm" : "215.9mm",
+                // Initial height is 1 page, but it grows with content
                 minHeight: pageSize === "a4" ? "297mm" : "279.4mm",
-                padding: "20mm" 
+                padding: "0" 
             }}
         >
-            <ResumeRenderer 
-                data={data} 
-                settings={{ fontSize }} 
-            />
+            {/* PAGE BREAK MARKER (Page 1 End) */}
+            <div 
+              className="page-break-marker absolute left-0 w-full flex items-center pointer-events-none z-10"
+              style={{ top: `${pageHeightMm}mm` }}
+            >
+               <div className="h-px bg-red-400 w-full border-t border-dashed border-red-400 opacity-60"></div>
+               <span className="absolute right-0 -top-3 bg-red-100 text-red-600 text-[9px] font-mono px-1 py-0.5 rounded-l border border-r-0 border-red-200 uppercase tracking-widest">
+                 Page Break
+               </span>
+            </div>
+
+            {/* PAGE BREAK MARKER (Page 2 End - if content gets really long) */}
+            <div 
+              className="page-break-marker absolute left-0 w-full flex items-center pointer-events-none z-10"
+              style={{ top: `${pageHeightMm * 2}mm` }}
+            >
+               <div className="h-px bg-red-400 w-full border-t border-dashed border-red-400 opacity-60"></div>
+               <span className="absolute right-0 -top-3 bg-red-100 text-red-600 text-[9px] font-mono px-1 py-0.5 rounded-l border border-r-0 border-red-200 uppercase tracking-widest">
+                 Page 2 Limit
+               </span>
+            </div>
+
+            {/* RENDERER */}
+            <div style={{ padding: "12.7mm", height: "100%" }}>
+                <ResumeRenderer 
+                    data={data} 
+                    settings={{ fontSize }} 
+                />
+            </div>
         </div>
 
       </div>
       
-      {/* Footer Info */}
-      <div className="absolute bottom-4 right-4 text-[10px] text-zinc-400 font-mono opacity-50 pointer-events-none select-none print:hidden">
+      {/* Footer Status */}
+      <div className="absolute bottom-4 right-4 text-[10px] text-zinc-400 dark:text-zinc-600 font-mono opacity-50 select-none print:hidden">
          {pageSize.toUpperCase()} • {fontSize.toUpperCase()}
       </div>
     </div>

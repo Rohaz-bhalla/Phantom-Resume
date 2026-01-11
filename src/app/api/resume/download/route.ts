@@ -22,7 +22,11 @@ export async function GET() {
 
     const browser = await puppeteer.launch({
       headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+      args: [
+        "--no-sandbox", 
+        "--disable-setuid-sandbox", 
+        "--disable-dev-shm-usage"
+      ],
     })
     
     const page = await browser.newPage()
@@ -30,111 +34,117 @@ export async function GET() {
     const data = resume.data as any
     const basics = data.basics || {}
 
-    // Helper for rendering links safely
     const renderLink = (url: string, label: string) => 
-      url ? `<a href="${url}" target="_blank" style="color: #2563eb; text-decoration: none;">${label}</a>` : ""
+      url ? `<a href="${url}" target="_blank">${label}</a>` : ""
 
     const htmlContent = `
       <!DOCTYPE html>
       <html>
         <head>
           <style>
-            /* 1. COMPACT PAGE SETTINGS 
-               - 15mm margins allow more content while staying professional.
-               - A4 format standard.
-            */
-            @page { margin: 15mm; size: A4; }
+            @page { margin: 15mm 15mm 15mm 15mm; size: A4; }
             
             body { 
-              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-              color: #18181b; 
-              line-height: 1.4; /* Tighter line height for better density */
-              font-size: 12px;  /* 12px is standard 9-10pt print size */
-            }
-            
-            a { color: #2563eb; text-decoration: none; }
-            
-            /* Header */
-            h1 { margin: 0 0 4px 0; font-size: 22px; text-transform: uppercase; letter-spacing: -0.5px; font-weight: 800; }
-            
-            .header-meta { 
+              font-family: Arial, Helvetica, sans-serif; 
+              color: #111; 
+              line-height: 1.5; 
               font-size: 11px; 
-              color: #52525b; 
-              display: flex; 
-              flex-wrap: wrap; 
-              gap: 8px; 
-              row-gap: 2px; 
-              margin-bottom: 12px;
             }
-            .header-meta span:not(:last-child):after { content: "•"; margin-left: 8px; color: #d4d4d8; }
             
-            /* Sections */
-            .section { margin-top: 16px; }
+            a { color: #222; text-decoration: none; }
             
-            /* ATS IMPROVEMENT: Use h2 for section titles */
+            /* HEADER: Centered & Strong */
+            .header { text-align: center; margin-bottom: 24px; }
+            h1 { 
+              margin: 0 0 8px 0; 
+              font-size: 26px; 
+              font-weight: 700; 
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            
+            .meta { 
+              font-size: 11px; 
+              color: #444; 
+              font-weight: 500;
+              margin-bottom: 6px;
+            }
+            .meta span { display: inline-block; margin: 0 8px; }
+            
+            /* SECTIONS: Bold divider */
+            .section { margin-top: 22px; }
+            
             h2 { 
-              font-size: 13px; 
+              font-size: 12px; 
               font-weight: 700; 
               text-transform: uppercase; 
-              border-bottom: 2px solid #18181b; /* Thicker, clearer divider */
-              padding-bottom: 2px; 
-              margin-bottom: 8px; 
-              margin-top: 0; /* Reset default browser margin */
-              letter-spacing: 0.05em;
-              
-              /* Keep title with its first item */
-              page-break-after: avoid; 
+              letter-spacing: 1px;
+              color: #000;
+              border-bottom: 2px solid #000; /* Stronger divider */
+              padding-bottom: 4px; 
+              margin-bottom: 14px; 
+              margin-top: 0;
             }
             
-            /* Items (Job, Project, etc) */
+            /* JOB ITEMS */
             .item { 
-              margin-bottom: 10px; 
-              
-              /* CRITICAL: Prevent items from splitting across pages */
+              margin-bottom: 14px; 
               page-break-inside: avoid; 
             }
             
-            .row { display: flex; justify-content: space-between; align-items: baseline; }
-            .title { font-weight: 700; font-size: 13px; }
-            .subtitle { font-style: italic; color: #3f3f46; font-size: 12px; }
-            .date { font-size: 11px; color: #52525b; font-family: monospace; font-weight: 500; white-space: nowrap; }
+            .row { 
+              display: flex; 
+              justify-content: space-between; 
+              align-items: baseline; 
+              margin-bottom: 2px;
+            }
             
-            /* Lists */
-            ul { margin: 2px 0 0 0; padding-left: 16px; }
-            li { margin-bottom: 1px; }
+            .role { font-weight: 700; font-size: 12px; color: #000; }
+            .date { font-weight: 500; font-size: 11px; color: #444; text-align: right; }
+            .company { font-weight: 600; font-style: italic; color: #333; margin-bottom: 4px; }
+            
+            /* BULLETS */
+            ul { margin: 4px 0 0 0; padding-left: 18px; }
+            li { margin-bottom: 3px; color: #222; }
 
-            /* Tech Stack */
-            .stack { font-size: 10px; color: #52525b; margin-top: 2px; font-weight: 500; }
+            /* TECH STACK */
+            .stack { 
+              font-weight: 500;
+              font-size: 10px; 
+              color: #444; 
+              margin-bottom: 4px;
+            }
           </style>
         </head>
         <body>
           
-          <div>
+          <div class="header">
             <h1>${basics.name || "Your Name"}</h1>
-            <div class="header-meta">
+            
+            <div class="meta">
               ${[basics.email, basics.phone, basics.location].filter(Boolean).map(t => `<span>${t}</span>`).join("")}
-              
-              ${basics.links?.linkedin ? `<span>LinkedIn: ${renderLink(basics.links.linkedin, "Profile")}</span>` : ""}
-              ${basics.links?.github ? `<span>GitHub: ${renderLink(basics.links.github, "Profile")}</span>` : ""}
-              ${basics.links?.twitter ? `<span>X: ${renderLink(basics.links.twitter, "Profile")}</span>` : ""}
-              
-              ${(basics.customFields || []).map((f: any) => 
-                  `<span>${f.label}: ${renderLink(f.value, "Link")}</span>`
-              ).join("")}
+            </div>
+            
+            <div class="meta">
+              ${[
+                 basics.links?.linkedin ? renderLink(basics.links.linkedin, "LinkedIn") : null,
+                 basics.links?.github ? renderLink(basics.links.github, "GitHub") : null,
+                 basics.links?.portfolio ? renderLink(basics.links.portfolio, "Portfolio") : null
+              ].filter(Boolean).join("<span>•</span>")}
             </div>
           </div>
 
           ${data.summary ? `
             <div class="section">
-              <h2>Summary</h2>
-              <div style="text-align: justify;">${data.summary}</div>
+              <h2>Professional Summary</h2>
+              <div style="text-align: justify; color: #222;">${data.summary}</div>
             </div>
           ` : ""}
 
           ${data.skills && data.skills.length > 0 ? `
             <div class="section">
-              <h2>Skills</h2>
-              <div style="line-height: 1.5;">${data.skills.join(" • ")}</div>
+              <h2>Technical Skills</h2>
+              <div style="font-weight: 500;">${data.skills.join("  •  ")}</div>
             </div>
           ` : ""}
 
@@ -144,10 +154,10 @@ export async function GET() {
               ${data.experience.map((exp: any) => `
                 <div class="item">
                   <div class="row">
-                    <span class="title">${exp.role || "Role"}</span>
-                    <span class="date">${exp.startDate || ""} ${exp.endDate ? `- ${exp.endDate}` : ""}</span>
+                    <span class="role">${exp.role || "Role"}</span>
+                    <span class="date">${exp.startDate || ""} ${exp.endDate ? `– ${exp.endDate}` : ""}</span>
                   </div>
-                  <div class="subtitle">${exp.company || "Company"}</div>
+                  <div class="company">${exp.company || "Company"}</div>
                   <ul>
                     ${(exp.bullets || []).map((b: string) => `<li>${b}</li>`).join("")}
                   </ul>
@@ -158,16 +168,20 @@ export async function GET() {
 
           ${data.projects && data.projects.length > 0 ? `
             <div class="section">
-              <h2>Projects</h2>
+              <h2>Key Projects</h2>
               ${data.projects.map((proj: any) => `
                 <div class="item">
                   <div class="row">
-                    <span class="title">
-                      ${proj.title}
-                      <span style="font-size: 10px; font-weight: normal; margin-left: 6px;">
-                         ${proj.github ? `[${renderLink(proj.github, "Code")}]` : ""}
-                         ${proj.website ? `[${renderLink(proj.website, "Demo")}]` : ""}
-                      </span>
+                    <span class="role">
+                      ${proj.title} 
+                      ${(proj.github || proj.website) ? 
+                        `<span style="font-weight:normal; font-size:10px; margin-left:8px; color:#555;">
+                            | ${[
+                              proj.github ? renderLink(proj.github, "Code") : null,
+                              proj.website ? renderLink(proj.website, "Live") : null
+                            ].filter(Boolean).join(" • ")}
+                         </span>` : ""
+                      }
                     </span>
                   </div>
                   ${proj.tech && proj.tech.length > 0 ? `<div class="stack">Stack: ${proj.tech.join(" • ")}</div>` : ""}
@@ -185,10 +199,10 @@ export async function GET() {
               ${data.education.map((edu: any) => `
                 <div class="item">
                   <div class="row">
-                    <span class="title">${edu.institute}</span>
+                    <span class="role">${edu.institute}</span>
                     <span class="date">${edu.year}</span>
                   </div>
-                  <div class="subtitle">${edu.degree}</div>
+                  <div class="company">${edu.degree}</div>
                 </div>
               `).join("")}
             </div>
@@ -200,13 +214,13 @@ export async function GET() {
               ${data.certifications.map((cert: any) => `
                 <div class="item">
                   <div class="row">
-                    <span class="title">
-                        ${cert.name}
-                        ${cert.url ? `<span style="font-size:10px; margin-left:5px;">[${renderLink(cert.url, "Link")}]</span>` : ""}
-                    </span>
+                    <span class="role">${cert.name}</span>
                     <span class="date">${cert.date}</span>
                   </div>
-                  <div class="subtitle">${cert.issuer}</div>
+                  <div class="company">
+                    ${cert.issuer}
+                    ${cert.url ? ` | ${renderLink(cert.url, "View")}` : ""}
+                  </div>
                 </div>
               `).join("")}
             </div>
@@ -217,8 +231,8 @@ export async function GET() {
                 <h2>${sec.title}</h2>
                 ${sec.items.map((item: any) => `
                     <div class="item">
-                        <div class="title">${item.name}</div>
-                        <div style="white-space: pre-wrap; color: #3f3f46;">${item.description}</div>
+                        <div class="role" style="margin-bottom: 2px;">${item.name}</div>
+                        <div style="white-space: pre-wrap;">${item.description}</div>
                     </div>
                 `).join("")}
              </div>
@@ -230,7 +244,6 @@ export async function GET() {
 
     await page.setContent(htmlContent, { waitUntil: "domcontentloaded" })
     
-    // Using standard PDF margins instead of CSS margins for better printer control
     const pdfBuffer = await page.pdf({ 
       format: "A4", 
       printBackground: true,
@@ -242,7 +255,7 @@ export async function GET() {
     return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${(basics.name || "resume").replace(/\s+/g, '_')}.pdf"`,
+        "Content-Disposition": `attachment; filename="${(basics.name || "resume").replace(/\s+/g, '_')}_Modern.pdf"`,
       },
     })
 

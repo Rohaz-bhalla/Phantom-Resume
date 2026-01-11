@@ -7,167 +7,186 @@ export async function importLinkedInPDF(formData: FormData): Promise<Partial<Res
   const file = formData.get("file") as File
   if (!file) throw new Error("No file provided")
 
-  // 1. Convert File to Buffer
   const arrayBuffer = await file.arrayBuffer()
   const buffer = Buffer.from(arrayBuffer)
-
-  // 2. Parse PDF
+  
+  // 1. Parse PDF
   const data = await pdfParse(buffer)
-  const text = data.text
+  let text = data.text
 
-  // 3. Identify Section Positions
-  // We find the indices of common LinkedIn headers to slice the text correctly
-  const indices = {
-    summary: text.indexOf("Summary"),
-    experience: text.indexOf("Experience"),
-    education: text.indexOf("Education"),
-    skills: text.indexOf("Skills") !== -1 ? text.indexOf("Skills") : text.indexOf("Top Skills"),
-    languages: text.indexOf("Languages"),
-    certifications: text.indexOf("Certifications"),
-  }
+  // 2. Clean Text
+  text = text
+    .replace(/\r\n/g, "\n")
+    .replace(/[–—]/g, "-") // Normalize dashes
+    .replace(/\u00A0/g, " ") // Remove non-breaking spaces
+    .replace(/Page \d+ of \d+/g, "") // Remove footer "Page 1 of 3"
+    .replace(/^\s*[\r\n]/gm, "") // Remove empty lines
 
-  // Helper to extract text between a start section and the nearest next section
-  const extractSection = (startIdx: number, allIndices: Record<string, number>) => {
-    if (startIdx === -1) return ""
-    // Find all indices that appear AFTER the current startIdx
-    const nextIndices = Object.values(allIndices)
-      .filter((idx) => idx > startIdx)
-      .sort((a, b) => a - b)
-    
-    const endIdx = nextIndices.length > 0 ? nextIndices[0] : text.length
-    return text.slice(startIdx, endIdx).trim()
-  }
-
-  // --- EXTRACT SUMMARY ---
-  let summary = ""
-  if (indices.summary !== -1) {
-    const rawSummary = extractSection(indices.summary, indices)
-    // Remove the word "Summary" from the start
-    summary = rawSummary.replace(/^Summary\s*/i, "").trim()
-  }
-
-  // --- EXTRACT SKILLS ---
-  let extractedSkills: string[] = []
-  if (indices.skills !== -1) {
-    const rawSkills = extractSection(indices.skills, indices)
-    // Clean up header
-    const cleanSkillsText = rawSkills.replace(/^(Top )?Skills\s*/i, "")
-    // LinkedIn skills are usually separated by newlines or bullets (•)
-    extractedSkills = cleanSkillsText
-      .split(/\n|•/)
-      .map(s => s.trim())
-      .filter(s => s.length > 2) // Filter out noise
-  }
-
-  // --- EXTRACT EDUCATION ---
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const educationItems: any[] = []
-  if (indices.education !== -1) {
-    const rawEdu = extractSection(indices.education, indices)
-    const cleanEdu = rawEdu.replace(/^Education\s*/i, "")
-    
-    // Split by double newline which often separates entries
-    const entries = cleanEdu.split("\n\n").filter(e => e.trim().length > 5)
-    
-    entries.forEach(entry => {
-      const lines = entry.split("\n").map(l => l.trim()).filter(Boolean)
-      if (lines.length >= 2) {
-        educationItems.push({
-          institute: lines[0],
-          degree: lines[1], // Heuristic: 2nd line is degree
-          year: lines.find(l => /\d{4}/.test(l)) || "" // Look for year line
-        })
-      }
-    })
-  }
-
-  // --- EXTRACT EXPERIENCE (Advanced) ---
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const experienceItems: any[] = []
-  if (indices.experience !== -1) {
-    const rawExp = extractSection(indices.experience, indices)
-    // Regex for: "Jan 2020 - Present" or "Jan 2019 - Feb 2021"
-    const dateRangeRegex = /((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4})\s+-\s+(Present|(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4})/g
-    
-    // We split the block by dates to find the "seams" between jobs
-    const parts = rawExp.split(dateRangeRegex)
-    // The matches iterator helps us find the actual date strings which split removed
-    const matches = [...rawExp.matchAll(dateRangeRegex)]
-
-    // Logic: The text BEFORE a date match usually contains the Role and Company
-    // The text AFTER a date match contains the description
-    
-    // "Experience" header is at the very top, so we ignore parts[0] usually or check it for the first job's title
-    
-    matches.forEach((match, i) => {
-       // 1. Find the Role and Company
-       // We look at the text segment immediately preceding this date match
-       // If it's the first match, we look at the start of the section.
-       // Otherwise, we look after the previous description.
-       
-       // Note: pdf-parse often outputs:
-       // Role Name
-       // Company Name
-       // Date - Date
-       
-       const prevMatchEnd = i === 0 ? 0 : (matches[i-1].index! + matches[i-1][0].length)
-       const headerText = rawExp.slice(prevMatchEnd, match.index).trim()
-       
-       const headerLines = headerText
-         .split("\n")
-         .map(l => l.trim())
-         .filter(l => l && l !== "Experience") // Filter out section header
-       
-       // Heuristic: Last two lines before the date are likely Company and Role
-       const role = headerLines.length > 0 ? headerLines[headerLines.length - 2] || headerLines[headerLines.length - 1] : "Role"
-       const company = headerLines.length > 1 ? headerLines[headerLines.length - 1] : "Company"
-
-       // 2. Find the Description
-       // Text from end of this date match to start of next date match
-       const nextMatchStart = matches[i+1] ? matches[i+1].index : rawExp.length
-       const descText = rawExp.slice(match.index! + match[0].length, nextMatchStart).trim()
-       
-       // Clean bullets
-       const bullets = descText
-         .split("\n")
-         .map(l => l.trim())
-         .filter(l => l.length > 5 && !l.includes("·")) // Remove short noise and LinkedIn separators
-         .slice(0, 5) // Limit to 5 bullets per job
-
-       experienceItems.push({
-         company: company,
-         role: role,
-         startDate: match[1],
-         endDate: match[3],
-         bullets: bullets
-       })
-    })
-  }
-
-  // --- BASIC INFO ---
+  // 3. Define Regex Patterns
   const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi
   const linkedinUrlRegex = /(www\.linkedin\.com\/in\/[a-zA-Z0-9-]+)/gi
   
-  const emails = text.match(emailRegex)
-  const linkedinUrls = text.match(linkedinUrlRegex)
+  // Robust Date Regex: Matches "Oct 2020 - Present", "August 2022 - 2024", etc.
+  const month = "(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?|\\d{1,2}\\/)"
+  const year = "\\d{4}"
+  // Allow for newlines inside the date string (common in PDFs)
+  const dateRangeRegex = new RegExp(`(${month}\\s*${year}|${year})\\s*-\\s*(Present|Current|${month}\\s*${year}|${year})`, "gi")
+
+  // 4. Initialize Containers
+  const experienceItems: any[] = []
+  const educationItems: any[] = []
   
-  // Name heuristic: First non-empty line of the whole file
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const lines = text.split("\n").map((l: any) => l.trim()).filter(Boolean)
-  const likelyName = lines[0]
+  // 5. GLOBAL SCAN: Find all items based on Dates
+  const matches = [...text.matchAll(dateRangeRegex)]
+  
+  matches.forEach((match, i) => {
+      // Get the text BEFORE this date (Preceding Context)
+      const prevEnd = i === 0 ? 0 : (matches[i-1].index! + matches[i-1][0].length)
+      const lookbackLimit = Math.max(prevEnd, match.index! - 300)
+      const chunk = text.slice(lookbackLimit, match.index).trim()
+      
+      // Split into lines and CLEAN NOISE
+      const lines = chunk.split("\n")
+        .map(l => l.trim())
+        .filter(l => {
+             // Filter out empty lines, short noise, and duration strings like "(1 month)" or "3 years"
+             if (l.length < 2) return false;
+             if (l.match(/^\(?\d+\s*(years?|yrs?|mos?|months?)\)?/i)) return false; 
+             if (l.match(/Page \d+/i)) return false;
+             return true;
+        });
+
+      // Get the text AFTER this date (Description Context)
+      const nextStart = matches[i+1] ? matches[i+1].index : text.length
+      const descChunk = text.slice(match.index! + match[0].length, nextStart).trim()
+      
+      // DECIDE: Is this Education or Experience?
+      // Keywords that strongly imply education
+      const educationKeywords = ["university", "college", "school", "institute", "academy", "b.tech", "b.sc", "m.sc", "degree", "diploma", "certificate", "student"]
+      const combinedContext = lines.join(" ").toLowerCase()
+      const isEducation = educationKeywords.some(k => combinedContext.includes(k))
+
+      if (isEducation) {
+          // --- PARSE EDUCATION ---
+          // Heuristic: First line is School, Second is Degree
+          // If only 1 line, split by comma if possible
+          let school = "University"
+          let degree = ""
+          
+          if (lines.length > 0) {
+              school = lines[0]
+              if (lines.length > 1) {
+                  degree = lines[1]
+              } else if (school.includes(",")) {
+                  const parts = school.split(",")
+                  school = parts[0]
+                  degree = parts.slice(1).join(" ").trim()
+              }
+          }
+
+          educationItems.push({
+              institute: school,
+              degree: degree,
+              year: match[0] // The date string itself
+          })
+      } else {
+          // --- PARSE EXPERIENCE ---
+          let role = "Role"
+          let company = "Company"
+          
+          if (lines.length > 0) {
+              // PATTERN A: Company -> Role -> Date (Your PDF seems to follow this mostly)
+              // The line CLOSEST to the date is usually the Role
+              role = lines[lines.length - 1] 
+              
+              if (lines.length > 1) {
+                  company = lines[lines.length - 2]
+              } else {
+                  // If only 1 line exists, it might be "Company - Role" or just Company
+                  if (role.includes("-")) {
+                      const parts = role.split("-")
+                      company = parts[0].trim()
+                      role = parts[1].trim()
+                  } else if (role.includes(" at ")) {
+                      const parts = role.split(" at ")
+                      role = parts[0].trim()
+                      company = parts[1].trim()
+                  } else {
+                      // Fallback: assume it's the Company Name if no other info
+                      company = role
+                      role = "" 
+                  }
+              }
+          }
+
+          // Clean Description Bullets
+          const bullets = descChunk.split("\n")
+              .map(l => l.trim())
+              .filter(l => 
+                  l.length > 10 && 
+                  !l.includes("·") && 
+                  !l.toLowerCase().includes("see less") &&
+                  !l.toLowerCase().includes("page of")
+              )
+              .slice(0, 6)
+
+          experienceItems.push({
+              company,
+              role,
+              startDate: match[1],
+              endDate: match[2],
+              bullets
+          })
+      }
+  })
+
+  // 6. Extract SKILLS (Specific Block Search)
+  let extractedSkills: string[] = []
+  const skillsHeaderRegex = /(Top Skills|Skills|Skills & Endorsements)\s*\n/i
+  const skillsMatch = text.match(skillsHeaderRegex)
+  
+  if (skillsMatch && skillsMatch.index !== undefined) {
+      const start = skillsMatch.index + skillsMatch[0].length
+      const potentialSkills = text.slice(start, start + 600)
+      const endMatch = potentialSkills.match(/(Experience|Education|Summary|Languages|Certifications)/)
+      const cutOff = endMatch ? endMatch.index : potentialSkills.length
+      
+      const cleanSkillsBlock = potentialSkills.slice(0, cutOff)
+      
+      extractedSkills = cleanSkillsBlock
+          .split(/,|\n|•|·/) 
+          .map(s => s.trim())
+          .filter(s => s.length > 2 && s.length < 50) 
+          .slice(0, 20)
+  }
+
+  // 7. Extract Summary
+  let summary = ""
+  const summaryMatch = text.match(/Summary\s*\n/i)
+  if (summaryMatch && summaryMatch.index !== undefined) {
+      const start = summaryMatch.index + summaryMatch[0].length
+      const potentialSummary = text.slice(start, start + 1000)
+      const nextSection = potentialSummary.match(/(Experience|Education|Skills|Top Skills)/)
+      const end = nextSection ? nextSection.index : potentialSummary.length
+      
+      summary = potentialSummary.slice(0, end).replace(/\n/g, " ").trim()
+  }
+
+  // 8. Basic Info
+  const emails = text.match(emailRegex)
+  const links = text.match(linkedinUrlRegex)
+  const name = text.split("\n").find(l => l.trim().length > 3 && !l.includes("@")) || "Your Name"
 
   return {
-    summary: summary || "Professional summary imported from LinkedIn.",
-    
     basics: {
-      name: likelyName || "",
+      name: name,
       email: emails ? emails[0] : "",
       location: "", 
       links: {
-        linkedin: linkedinUrls ? `https://${linkedinUrls[0]}` : "",
+        linkedin: links ? `https://${links[0]}` : "",
       }
     },
-    
+    summary: summary || "Imported from LinkedIn.",
     skills: extractedSkills,
     experience: experienceItems,
     education: educationItems,
