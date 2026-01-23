@@ -16,20 +16,20 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Set environment to build mode
 ENV NEXT_TELEMETRY_DISABLED 1
 
 # --- PUBLIC BUILD-TIME VARIABLES ---
-# Required for 'next build' to compile static pages.
+# Note: These are for the build phase. Private secrets (like Database URL) 
+# should be added via the Hugging Face "Settings" tab.
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_aGlwLWd1bGwtODUuY2xlcmsuYWNjb3VudHMuZGV2JA
 ENV NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
 ENV NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-ENV NEXT_PUBLIC_APP_URL=https://phantom-resume.onrender.com
+# Update this to your Space URL later if needed for metadata
+ENV NEXT_PUBLIC_APP_URL=https://huggingface.co/spaces
 
-# Run the build
 RUN pnpm run build
 
-# 4. Production Image (The one that actually runs)
+# 4. Production Image
 FROM node:20-slim AS runner
 WORKDIR /app
 
@@ -39,6 +39,7 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true
 ENV PUPPETEER_EXECUTABLE_PATH /usr/bin/google-chrome-stable
 
 # --- Install Chrome for Puppeteer ---
+USER root
 RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
@@ -49,25 +50,28 @@ RUN apt-get update && apt-get install -y \
       --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
-# Add user
+# Add user (Hugging Face often uses UID 1000, so we stick to a safe range)
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# ✅ FIX 1: Explicitly create a writable home directory
-RUN mkdir -p /home/nextjs && chown -R nextjs:nodejs /home/nextjs
+# Create writable home for Chrome/Puppeteer
+RUN mkdir -p /home/nextjs/.cache && chown -R nextjs:nodejs /home/nextjs
 
 # Copy built artifacts
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# ✅ FIX 2: Set the HOME environment variable so Chrome knows where to write
+# Set home to writable dir for Chrome
 ENV HOME=/home/nextjs
+ENV XDG_CONFIG_HOME=/home/nextjs/.config
+ENV XDG_CACHE_HOME=/home/nextjs/.cache
 
 USER nextjs
 
-EXPOSE 3000
-ENV PORT 3000
+# --- HUGGING FACE SPECIFIC PORT ---
+EXPOSE 7860
+ENV PORT 7860
 ENV HOSTNAME "0.0.0.0"
 
 CMD ["node", "server.js"]
